@@ -6,21 +6,24 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 @Entity
 @Table(name = "azolik_yur")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AzolikYurEntity {
+public class AzolikYur {
 
     @Id
-    @Column(name = "kodchlen", nullable = false)
+    @Column(name = "kodchlen", nullable = false, columnDefinition = "nchar(8)")
     private String kodchlen;
 
     @Column(name = "dats")
-    private Date dats;
+    private LocalDate dats;
 
     @Column(name = "name")
     private String name;
@@ -143,7 +146,7 @@ public class AzolikYurEntity {
     private Integer sysNumber;
 
     @Column(name = "dats_izm")
-    private Date datsIzm;
+    private LocalDate datsIzm;
 
     @Column(name = "uchred")
     private Byte uchred;
@@ -156,7 +159,5 @@ public class AzolikYurEntity {
 
     @Column(name = "dats_izm_uchred")
     private Date datsIzmUchred;
-
-    // Геттеры и сеттеры (или используй Lombok)
 }
 

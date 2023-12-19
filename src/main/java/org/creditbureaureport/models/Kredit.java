@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -13,25 +14,25 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class KreditEntity {
+public class Kredit {
 
     @Id
-    @Column(name = "kod", nullable = false)
+    @Column(name = "kod", nullable = false, columnDefinition = "nchar(8)")
     private String kod;
 
-    @Column(name = "numdog", nullable = false)
+    @Column(name = "numdog", nullable = false, columnDefinition = "nchar(12)")
     private String numdog;
 
     @Column(name = "datadog", nullable = false)
-    private Date datadog;
+    private LocalDate datadog;
 
     @Column(name = "dats")
-    private Date dats;
+    private LocalDate dats;
 
     @Column(name = "summa")
     private BigDecimal summa;
 
-    @Column(name = "vidvalut", nullable = false)
+    @Column(name = "vidvalut", nullable = false, columnDefinition = "nchar(3)")
     private String vidvalut;
 
     @Column(name = "vidzalog", nullable = false)
@@ -67,10 +68,10 @@ public class KreditEntity {
     @Column(name = "users")
     private Short users;
 
-    @Column(name = "lskred")
+    @Column(name = "lskred", nullable = false, columnDefinition = "nchar(20)")
     private String lskred;
 
-    @Column(name = "lsproc")
+    @Column(name = "lsproc", nullable = false, columnDefinition = "nchar(20)")
     private String lsproc;
 
     @Column(name = "lsprosr_kred")
@@ -226,7 +227,5 @@ public class KreditEntity {
 
     @Transient
     private String lspeni;
-
-    // Геттеры и сеттеры (или используй Lombok)
 }
 

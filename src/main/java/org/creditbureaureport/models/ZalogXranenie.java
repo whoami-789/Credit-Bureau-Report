@@ -5,14 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
-
 @Entity
 @Table(name = "zalog_xranenie")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ZalogXranenieEntity {
+public class ZalogXranenie {
 
     @Id
     @Column(name = "num_dog", nullable = false)
@@ -23,8 +21,5 @@ public class ZalogXranenieEntity {
 
     @Column(name = "status", nullable = false)
     private Byte status;
-
-    // Геттеры и сеттеры (или используй Lombok)
-
 }
 

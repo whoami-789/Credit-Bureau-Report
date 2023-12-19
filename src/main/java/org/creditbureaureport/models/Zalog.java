@@ -6,20 +6,19 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "zalog")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ZalogEntity {
+public class Zalog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
-
     @Column(name = "kod_zalog", nullable = false)
     private Byte kodZalog;
 
@@ -32,19 +31,19 @@ public class ZalogEntity {
     @Column(name = "dtime")
     private Date dtime;
 
-    @Column(name = "numdog")
+    @Column(name = "numdog", nullable = false, columnDefinition = "char(12)")
     private String numdog;
 
     @Column(name = "sost")
     private Byte sost;
 
     @Column(name = "dats")
-    private Date dats;
+    private LocalDate dats;
 
     @Column(name = "dats_snyat")
     private Date datsSnyat;
 
-    @Column(name = "ls")
+    @Column(name = "ls", nullable = false, columnDefinition = "nchar(20)")
     private String ls;
 
     @Column(name = "kod_cb")
@@ -52,7 +51,4 @@ public class ZalogEntity {
 
     @Column(name = "dopinfo", columnDefinition = "TEXT")
     private String dopinfo;
-
-    // Геттеры и сеттеры (или используй Lombok)
-
 }

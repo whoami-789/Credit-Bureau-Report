@@ -1,14 +1,12 @@
 package org.creditbureaureport.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -16,7 +14,7 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class InformEntity {
+public class Inform {
 
     @Id
     @Column(name = "numks", nullable = false)
@@ -73,10 +71,10 @@ public class InformEntity {
     @Column(name = "passiv")
     private BigDecimal passiv;
 
-    @Column(name = "lskomiss")
+    @Column(name = "lskomiss", nullable = false, columnDefinition = "nchar")
     private String lskomiss;
 
-    @Column(name = "lspeni")
+    @Column(name = "lspeni", nullable = false, columnDefinition = "nchar")
     private String lspeni;
 
     @Column(name = "dats_vnedr")
@@ -100,10 +98,10 @@ public class InformEntity {
     @Column(name = "creatrezerv")
     private Byte creatrezerv;
 
-    @Column(name = "ls_kontrrezerv_kred")
+    @Column(name = "ls_kontrrezerv_kred", nullable = false, columnDefinition = "nchar")
     private String lsKontrrezervKred;
 
-    @Column(name = "ls_kontrrezerv_liz")
+    @Column(name = "ls_kontrrezerv_liz", nullable = false, columnDefinition = "nchar")
     private String lsKontrrezervLiz;
 
     @Column(name = "vers1")
@@ -112,7 +110,7 @@ public class InformEntity {
     @Column(name = "vers2")
     private Short vers2;
 
-    @Column(name = "ls_kontrvne")
+    @Column(name = "ls_kontrvne", nullable = false, columnDefinition = "nchar")
     private String lsKontrvne;
 
     @Column(name = "fio_rais")
@@ -143,7 +141,7 @@ public class InformEntity {
     private String pathOtchRecv;
 
     @Column(name = "dats_izm")
-    private Date datsIzm;
+    private LocalDate datsIzm;
 
     @Column(name = "minzp")
     private BigDecimal minzp;
@@ -159,6 +157,4 @@ public class InformEntity {
 
     @Column(name = "is4bal")
     private Byte is4bal;
-
-    // Геттеры и сеттеры (или используй Lombok)
 }

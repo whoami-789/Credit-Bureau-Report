@@ -6,33 +6,31 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
+import java.util.List;
 
 @Entity
-@Table(name = "zalog_detal")
+@Table(name = "saldo")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ZalogDetalEntity {
+public class Saldo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "kod_zalog", nullable = false)
-    private Long kodZalog;
+    @Column(name = "ls", nullable = false, columnDefinition = "nchar(20)")
+    private String ls;
 
-    @Column(name = "stroka")
-    private String stroka;
+    @Column(name = "dats", nullable = false)
+    private LocalDate dats;
 
-    @Column(name = "detal", columnDefinition = "TEXT")
-    private String detal;
-
-    @Column(name = "sums")
+    @Column(name = "sums", nullable = false)
     private BigDecimal sums;
 
-    // Геттеры и сеттеры (или используй Lombok)
-
+    @Column(name = "activate")
+    private Byte activate;
 }
-

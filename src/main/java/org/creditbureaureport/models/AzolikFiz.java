@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -13,16 +14,15 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AzolikFizEntity {
-
-    @Id
-    @Column(name = "kodchlen", nullable = false)
+public class AzolikFiz {
+    
+    @Column(name = "kodchlen", nullable = false, columnDefinition = "nchar(8)")
     private String kodchlen;
 
     @Column(name = "dats")
-    private Date dats;
+    private LocalDate dats;
 
-    @Transient
+    @Column(name = "name")
     private String name;
 
     @Column(name = "numknigki")
@@ -46,7 +46,7 @@ public class AzolikFizEntity {
     @Column(name = "sost")
     private Byte sost;
 
-    @Transient
+    @Column(name = "ser_num_pasp")
     private String serNumPasp;
 
     @Column(name = "vidan_pasp")
@@ -103,10 +103,10 @@ public class AzolikFizEntity {
     @Transient
     private Integer kodSubject;
 
-    @Column(name = "ser_pasp")
+    @Column(name = "serPasp", nullable = false, columnDefinition = "nchar(8)")
     private String serPasp;
 
-    @Column(name = "num_pasp")
+    @Column(name = "numPasp", nullable = false, columnDefinition = "nchar(8)")
     private String numPasp;
 
     @Column(name = "kod_obl")
@@ -140,7 +140,7 @@ public class AzolikFizEntity {
     private Integer sysNumber;
 
     @Column(name = "dats_izm")
-    private Date datsIzm;
+    private LocalDate datsIzm;
 
     @Column(name = "uchred")
     private Byte uchred;
@@ -155,7 +155,5 @@ public class AzolikFizEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
-
-    // Геттеры и сеттеры (или используй Lombok)
 }
 
