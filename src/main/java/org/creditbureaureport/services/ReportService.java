@@ -17,12 +17,12 @@ import java.text.SimpleDateFormat;
 
 
 @Service
-public class KreditService {
+public class ReportService {
 
     private final AzolikFizRepository reportRepository;
 
     @Autowired
-    public KreditService(AzolikFizRepository reportRepository) {
+    public ReportService(AzolikFizRepository reportRepository) {
         this.reportRepository = reportRepository;
     }
 
