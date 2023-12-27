@@ -1,4 +1,4 @@
-package org.creditbureaureport.models;
+package org.creditbureaureport.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 
 @Entity
 @Table(name = "azolik_yur")
@@ -31,10 +29,7 @@ public class AzolikYur {
     @Column(name = "shotname")
     private String shotname;
 
-    @Column(name = "numknigki")
-    private String numknigki;
-
-    @Column(name = "inn")
+    @Column(name = "inn", nullable = false, columnDefinition = "nchar()")
     private String inn;
 
     @Column(name = "adres")
@@ -61,9 +56,6 @@ public class AzolikYur {
     @Column(name = "mfo")
     private String mfo;
 
-    @Column(name = "okonx")
-    private String okonx;
-
     @Column(name = "fsobst")
     private Byte fsobst;
 
@@ -80,28 +72,16 @@ public class AzolikYur {
     private Byte obrazDirector;
 
     @Column(name = "dats_rojd")
-    private Date datsRojd;
+    private LocalDate datsRojd;
 
     @Column(name = "svyaz")
     private Byte svyaz;
 
     @Column(name = "dats_zakr")
-    private Date datsZakr;
+    private LocalDate datsZakr;
 
     @Column(name = "users")
     private Short users;
-
-    @Column(name = "opf")
-    private String opf;
-
-    @Column(name = "soato")
-    private String soato;
-
-    @Column(name = "soogu")
-    private String soogu;
-
-    @Column(name = "okpo")
-    private String okpo;
 
     @Column(name = "kod_organ")
     private Byte kodOrgan;
@@ -110,7 +90,7 @@ public class AzolikYur {
     private Integer numRegistr;
 
     @Column(name = "dats_registr")
-    private Date datsRegistr;
+    private LocalDate datsRegistr;
 
     @Column(name = "prim")
     private String prim;
@@ -118,7 +98,7 @@ public class AzolikYur {
     @Column(name = "tec_vznos")
     private BigDecimal tecVznos;
 
-    @Column(name = "lsvznos")
+    @Column(name = "lsvznos", nullable = false, columnDefinition = "nchar()")
     private String lsvznos;
 
     @Column(name = "dtime")
@@ -136,7 +116,7 @@ public class AzolikYur {
     @Column(name = "fio_buxg")
     private String fioBuxg;
 
-    @Column(name = "tip_zayom")
+    @Column(name = "tipZayom", nullable = false, columnDefinition = "nchar()")
     private String tipZayom;
 
     @Column(name = "sost_registr")
@@ -151,13 +131,10 @@ public class AzolikYur {
     @Column(name = "uchred")
     private Byte uchred;
 
-    @Column(name = "kod_obl")
+    @Column(name = "kodObl", nullable = false, columnDefinition = "nchar()")
     private String kodObl;
 
-    @Column(name = "kod_rayon")
+    @Column(name = "kodRayon", nullable = false, columnDefinition = "nchar()")
     private String kodRayon;
-
-    @Column(name = "dats_izm_uchred")
-    private Date datsIzmUchred;
 }
 

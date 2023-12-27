@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.util.Date;
 
 @Data
-public class FizProjectionDTO {
+public class FizDTO {
     private String kodchlen;
     private LocalDate datsIzm;
     private String name;
@@ -14,7 +14,7 @@ public class FizProjectionDTO {
     private String imya;
     private String otch;
     private Byte fsobst;
-    private Date datsRojd;
+    private LocalDate datsRojd;
     private String adres;
     private String kodRayon;
     private String kodObl;
@@ -22,8 +22,8 @@ public class FizProjectionDTO {
     private String inn;
     private String tipDok;
     private String serNumPasp;
-    private Date vidanPasp;
-    private Date paspdo;
+    private LocalDate vidanPasp;
+    private LocalDate paspdo;
     private String telmobil;
     private String telhome;
     private Byte indpred;

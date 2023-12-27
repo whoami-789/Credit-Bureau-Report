@@ -1,4 +1,4 @@
-package org.creditbureaureport.models;
+package org.creditbureaureport.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 public class ZalogXranenie {
 
     @Id
-    @Column(name = "num_dog", nullable = false)
-    private Integer numDog;
+    @Column(name = "kod_dog", nullable = false)
+    private Integer kodDog;
 
     @Column(name = "num_korobki", nullable = false)
     private Integer numKorobki;

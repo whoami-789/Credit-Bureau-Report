@@ -1,4 +1,4 @@
-package org.creditbureaureport.models;
+package org.creditbureaureport.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

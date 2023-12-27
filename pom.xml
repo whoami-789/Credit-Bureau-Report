@@ -41,6 +41,17 @@
             <artifactId>mssql-jdbc</artifactId>
             <version>12.4.2.jre11</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.21</version> <!-- Проверьте последнюю версию на https://commons.apache.org/proper/commons-compress/download_compress.cgi -->
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.11.0</version> <!-- Проверьте последнюю версию на https://commons.apache.org/proper/commons-io/download_io.cgi -->
+        </dependency>
+
     </dependencies>
 
     <build>
