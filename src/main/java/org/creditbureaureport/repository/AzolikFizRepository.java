@@ -29,10 +29,14 @@ public interface AzolikFizRepository extends JpaRepository<AzolikFiz, String> {
             "    k.xatar," +
             "    k.tipkred," +
             "    k.prosent," +
+//            "    k.numdog," +
+//            "    k.kod_dog," +
             "    s.sums," +
             "    g.dats," +
+//            "    g.numdog," +
             "    g.pog_kred + g.pog_proc," +
             "    d.dats," +
+//            "    d.kod_dog," +
             "    z.sums," +
             "    z.kod_cb " +
 //            "    zd.kod_zalog," +

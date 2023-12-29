@@ -1,8 +1,5 @@
 package org.creditbureaureport.service;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.commons.io.*;
 import org.creditbureaureport.dto.ContractDTO;
 import org.creditbureaureport.dto.FizDTO;
 import org.creditbureaureport.dto.YurDTO;
@@ -10,16 +7,19 @@ import org.creditbureaureport.model.AzolikFiz;
 import org.creditbureaureport.model.AzolikYur;
 import org.creditbureaureport.repository.AzolikFizRepository;
 import org.creditbureaureport.repository.AzolikYurRepository;
+import org.creditbureaureport.repository.CreditBureauRepository;
 import org.creditbureaureport.repository.DocumentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,12 +31,20 @@ public class ReportService {
     private final AzolikFizRepository azolikFizRepository;
     private final AzolikYurRepository yurReportRepository;
     private final DocumentRepository documentRepository;
+    private final CreditBureauRepository creditBureauRepository;
+
 
     @Autowired
-    public ReportService(AzolikFizRepository reportRepository, AzolikYurRepository yurReportRepository, DocumentRepository documentRepository) {
+    public ReportService(AzolikFizRepository reportRepository, AzolikYurRepository yurReportRepository, DocumentRepository documentRepository, CreditBureauRepository creditBureauRepository) {
         this.azolikFizRepository = reportRepository;
         this.yurReportRepository = yurReportRepository;
         this.documentRepository = documentRepository;
+        this.creditBureauRepository = creditBureauRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<AzolikFiz> getAllAzolikFiz() {
+        return creditBureauRepository.getAzolikFizRepository().findAll();
     }
 
     public String getAllFizProjections() {

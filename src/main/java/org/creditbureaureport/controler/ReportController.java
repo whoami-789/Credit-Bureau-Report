@@ -2,6 +2,7 @@ package org.creditbureaureport.controler;
 
 import org.creditbureaureport.dto.ContractDTO;
 import org.creditbureaureport.dto.FizDTO;
+import org.creditbureaureport.model.AzolikFiz;
 import org.creditbureaureport.service.ReportService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,9 +28,15 @@ public class ReportController {
         return kreditService.getAllFizProjections();
     }
 
-    @GetMapping("/contracts")
+    @GetMapping("/report")
     public ResponseEntity<List<ContractDTO>> getAzolikFizContracts() {
         List<ContractDTO> contracts = kreditService.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie();
         return new ResponseEntity<>(contracts, HttpStatus.OK);
+    }
+
+    @GetMapping("/contracts")
+    public ResponseEntity<List<AzolikFiz>> getAllAzolikFiz() {
+        List<AzolikFiz> azolikFizList = kreditService.getAllAzolikFiz();
+        return new ResponseEntity<>(azolikFizList, HttpStatus.OK);
     }
 }
