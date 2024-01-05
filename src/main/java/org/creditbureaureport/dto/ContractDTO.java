@@ -61,6 +61,14 @@ public class ContractDTO {
     private String kodchlen;
     private String name;
 
+    private BigDecimal pod;
+    private Date beforeReport;
+    private Date afterReport;
+    private BigDecimal sums_z;
+    private BigDecimal total_sums;
+    private BigDecimal prosr_proc;
+    private BigDecimal prosr_kred;
+
     public ContractDTO(ContractDTO contractDTO) {
 
     }

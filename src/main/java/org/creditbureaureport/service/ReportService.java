@@ -50,7 +50,7 @@ public class ReportService {
     public String getAllFizProjections() {
         List<AzolikFiz> fizProjections = azolikFizRepository.findByMonthAndYear(11, 2023);
         List<AzolikYur> yurProjections = yurReportRepository.findByMonthAndYear(12, 2023);
-        List<Object[]> contracts = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie();
+        List<Object[]> contracts = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie(11,2023);
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
 
@@ -149,7 +149,7 @@ public class ReportService {
                 }
 
                 else {
-                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
+                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen()  !=null ? fizProjection.getKodchlen() : "||") + "|" + fizProjection.getImya() + "|"
                             + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + inputDateFormatter.format(fizProjection.getDatsRojd())
                             + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
                             + "|2|" + fizProjection.getInn().replaceAll("\\s", "") + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "")
@@ -241,7 +241,7 @@ public class ReportService {
 
 
     public List<ContractDTO> findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie() {
-        List<Object[]> results = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie();
+        List<Object[]> results = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie(11,2023);
         return mapToContractDTO(results);
     }
 
@@ -258,25 +258,28 @@ public class ReportService {
         dto.setNumdog((String) result[2]);
         dto.setVidkred((result[3].toString()));
         dto.setDatsIzm((Date) result[4]);
-        dto.setKod((String) result[5]);
-        dto.setSost((Byte) result[6]);
-        dto.setStatus((Byte) result[7]);
-        dto.setValut((Integer) result[8]);
-        dto.setDatadog((Date) result[9]);
-        dto.setDats((Date) result[10]);
-        dto.setDatsZakr((Date) result[11]);
-        dto.setSumma((BigDecimal) result[12]);
-        dto.setGraf((Byte) result[13]);
-        dto.setNalbeznal((Byte) result[14]);
-        dto.setXatar((Byte) result[15]);
-        dto.setTipkred((Short) result[16]);
-        dto.setProsent((BigDecimal) result[17]);
-        dto.setSaldoSums((BigDecimal) result[18]);
-        dto.setGrafikDats((Date) result[19]);
-        dto.setPogKredAndPogProc((BigDecimal) result[20]);
-        dto.setDokDats((Date) result[21]);
-        dto.setZalogSums((BigDecimal) result[22]);
+        dto.setSost((Byte) result[5]);
+        dto.setStatus((Byte) result[6]);
+        dto.setDatadog((Date) result[7]);
+        dto.setDatsZakr((Date) result[8]);
+        dto.setSumma((BigDecimal) result[9]);
+        dto.setGraf((Byte) result[10]);
+        dto.setNalbeznal((Byte) result[11]);
+        dto.setXatar((Byte) result[12]);
+        dto.setTipkred((Short) result[13]);
+        dto.setProsent((BigDecimal) result[14]);
+        dto.setDats((Date) result[16]);
+        dto.setGrafikDats((Date) result[18]);
+        dto.setDokDats((Date) result[17]);
+        dto.setPod((BigDecimal) result[19]);
+        dto.setBeforeReport((Date) result[20]);
+        dto.setAfterReport((Date) result[21]);
+        dto.setSums_z((BigDecimal) result[22]);
         dto.setKodCb((String) result[23]);
+        dto.setTotal_sums((BigDecimal) result[24]);
+        dto.setProsr_proc((BigDecimal) result[25]);
+        dto.setProsr_kred((BigDecimal) result[26]);
+
 
         return dto;
     }

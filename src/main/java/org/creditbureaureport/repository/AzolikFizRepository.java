@@ -1,6 +1,5 @@
 package org.creditbureaureport.repository;
 
-import org.creditbureaureport.dto.ContractDTO;
 import org.creditbureaureport.model.AzolikFiz;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,50 +9,74 @@ import java.util.List;
 
 
 public interface AzolikFizRepository extends JpaRepository<AzolikFiz, String> {
-    @Query(value = "SELECT top 20 " +
-            "    af.kodchlen," +
-            "    af.name," +
-            "    k.numdog," +
-            "    k.vidkred," +
-            "    k.dats_izm," +
-            "    k.kod," +
-            "    k.sost," +
-            "    k.status," +
-            "    k.valut," +
-            "    k.datadog," +
-            "    k.dats," +
-            "    k.dats_zakr," +
-            "    k.summa," +
-            "    k.graf," +
-            "    k.nalbeznal," +
-            "    k.xatar," +
-            "    k.tipkred," +
-            "    k.prosent," +
-//            "    k.numdog," +
-//            "    k.kod_dog," +
-            "    s.sums," +
-            "    g.dats," +
-//            "    g.numdog," +
-            "    g.pog_kred + g.pog_proc," +
-            "    d.dats," +
-//            "    d.kod_dog," +
-            "    z.sums," +
-            "    z.kod_cb " +
-//            "    zd.kod_zalog," +
-//            "    zd.detal," +
-//            "    zd.stroka," +
-//            "    zx.data_priem," +
-//            "    zx.data_vozvrat " +
-            "FROM " +
-            "    azolik_fiz af " +
-            "        INNER JOIN kredit k ON af.users = k.users" +
-            "        INNER JOIN saldo s ON k.lskred = s.ls" +
-            "        INNER JOIN grafik g ON g.numdog = k.numdog" +
-            "        INNER JOIN dok d ON d.ls = k.lskred" +
-            "        INNER JOIN zalog z ON z.numdog = k.numdog" +
-            "        INNER JOIN zalog_detal zd ON z.kod = zd.kod_zalog" +
-            "        INNER JOIN zalog_xranenie zx ON z.kod = zx.kod_dog", nativeQuery = true)
-    List<Object[]> findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie();
+    @Query(value = "SELECT distinct af.kodchlen," +
+            "                af.name," +
+            "                k.numdog," +
+            "                k.vidkred," +
+            "                MAX(k.dats_izm)                                              AS dats_izm," +
+            "                MAX(k.sost)                                                  AS sost," +
+            "                MAX(k.status)                                                AS status," +
+            "                MAX(k.datadog)                                               AS datadog," +
+            "                k.dats_zakr                                                  AS dats_zakr," +
+            "                MAX(k.summa)                                                 AS summa," +
+            "                MAX(k.graf)                                                  AS graf," +
+            "                MAX(k.nalbeznal)                                             AS nalbeznal," +
+            "                MAX(k.xatar)                                                 AS xatar," +
+            "                MAX(k.tipkred)                                               AS tipkred," +
+            "                MAX(k.prosent)                                               AS prosent," +
+            "                MAX(k.kod_dog)                                               AS kod_dog," +
+            "                MAX(k.dats)                                                  AS dats," +
+            "                MAX(d.dats)                                                  AS dats_d," +
+            "                MAX(g.dats)                                                  AS dats_g," +
+            "                min(g.pog_kred + g.pog_proc)                                 AS pod," +
+            "                (SELECT MIN(g_inner.dats)" +
+            "                 FROM grafik g_inner" +
+            "                 WHERE g_inner.numdog = k.numdog)                            AS first_dats_g_before_condition," +
+            "                MIN(CASE WHEN g.dats > k.dats_izm THEN g.dats ELSE NULL END) AS first_dats_g_after_condition," +
+            "                MAX(z.sums)                                                  AS sums_z," +
+            "                MAX(z.kod_cb)                                                AS kod_cb," +
+            "                (SELECT SUM(s_inner.sums)" +
+            "                 FROM saldo s_inner" +
+            "                 WHERE s_inner.ls IN (k.lspeni, k.lsproc, k.lskred)" +
+            "                   AND s_inner.activate = 1)                                 AS total_sums," +
+            "                (SELECT SUM(s_inner.sums)" +
+            "                 FROM saldo s_inner" +
+            "                 WHERE s_inner.ls = k.lsprosr_proc" +
+            "                   AND s_inner.activate = 1)                                 AS total_sums_prosr_proc," +
+            "                (SELECT SUM(s_inner.sums)" +
+            "                 FROM saldo s_inner" +
+            "                 WHERE s_inner.ls = k.lsprosr_kred" +
+            "                   AND s_inner.activate = 1)                                 AS total_sums_prosr_kred " +
+            "FROM kredit k" +
+            "         INNER JOIN" +
+            "     azolik_fiz af ON af.kodchlen = k.kod" +
+            "         LEFT JOIN" +
+            "     (SELECT kod_dog, ls, MAX(dats) AS dats" +
+            "      FROM dok" +
+            "      GROUP BY kod_dog, ls) d ON k.kod_dog = d.kod_dog" +
+            "         LEFT JOIN" +
+            "     (SELECT numdog, pog_kred, pog_proc, MAX(dats) AS dats" +
+            "      FROM grafik" +
+            "      GROUP BY numdog, pog_kred, pog_proc) g ON k.numdog = g.numdog" +
+            "         LEFT JOIN" +
+            "     (SELECT ls, activate, MAX(sums) AS sums" +
+            "      FROM saldo" +
+            "      GROUP BY ls, activate) s ON d.ls = s.ls" +
+            "         LEFT JOIN" +
+            "     (SELECT numdog, MAX(sums) AS sums, MAX(kod_cb) AS kod_cb" +
+            "      FROM zalog" +
+            "      GROUP BY numdog) z ON g.numdog = z.numdog " +
+            "WHERE MONTH(k.dats_izm) = :month" +
+            "  AND YEAR(k.dats_izm) = :year" +
+            "  AND EXISTS (SELECT 1" +
+            "              FROM saldo s" +
+            "              WHERE (s.ls = k.lspeni OR s.ls = k.lsproc OR s.ls = k.lskred" +
+            "                  OR s.ls = k.lsprosr_proc OR s.ls = k.lsprosr_kred)" +
+            "                AND s.activate = 1)" +
+            "  and k.numdog = g.numdog " +
+            "GROUP BY af.kodchlen, af.name, k.numdog, k.vidkred, k.lspeni, k.lsproc, k.lskred, k.lsprosr_proc, k.lsprosr_kred," +
+            "         k.dats_zakr, s.activate", nativeQuery = true)
+    List<Object[]> findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie(@Param("month") int month, @Param("year") int year);
 
     @Query("FROM AzolikFiz WHERE MONTH(datsIzm) = :month AND YEAR(datsIzm) = :year")
     List<AzolikFiz> findByMonthAndYear(@Param("month") int month, @Param("year") int year);
