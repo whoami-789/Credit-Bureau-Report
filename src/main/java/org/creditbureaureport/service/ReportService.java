@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,7 +51,8 @@ public class ReportService {
     public String getAllFizProjections() {
         List<AzolikFiz> fizProjections = azolikFizRepository.findByMonthAndYear(11, 2023);
         List<AzolikYur> yurProjections = yurReportRepository.findByMonthAndYear(12, 2023);
-        List<Object[]> contracts = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie(11,2023);
+        List<Object[]> contracts = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie(11, 2023);
+        List<ContractDTO> contractDTOList = new ArrayList<>();
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
 
@@ -69,8 +71,7 @@ public class ReportService {
 
                 if (fizProjection.getIndpred() == 1) {
                     writer.write("ID|MKOR0001||" + outputDateFormat.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|" + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + outputDateFormat.format(fizProjection.getDatsRojd()) + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension() + "|2|" + fizProjection.getInn().replaceAll("\\s", "") + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "") + "|" + outputDateFormat.format(fizProjection.getVidanPasp()) + "||" + outputDateFormat.format(fizProjection.getPaspdo()) + "||||||2|" + fizProjection.getTelmobil().replaceAll("\\s", "") + "|1|" + fizProjection.getTelhome().replaceAll("\\s", "") + "||||||||" + fizProjection.getName() + "||" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "||||||||||||3|" + fizProjection.getInn() + "|||2|" + fizProjection.getTelmobil() + "|1|" + fizProjection.getTelhome());
-                }
-                else if (fizProjection.getLsvznos() != null) System.out.println(fizProjection.getLsvznos());
+                } else if (fizProjection.getLsvznos() != null) System.out.println(fizProjection.getLsvznos());
 
                 else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null &&
                         fizProjection.getVidanPasp() == null && fizProjection.getDatsRojd() == null &&
@@ -83,9 +84,7 @@ public class ReportService {
                             + "|77777777" + "||77777777|" + "||||||2|77777777"
                             + "|1|77777777"
                             + "|||||||||||||||||||||||||||||||||||");
-                }
-
-                else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null &&
+                } else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null &&
                         fizProjection.getTelhome() == null && fizProjection.getTelmobil() == null &&
                         fizProjection.getVidanPasp() == null && fizProjection.getDatsRojd() == null) {
                     writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
@@ -94,19 +93,14 @@ public class ReportService {
                             + "|2|77777777|" + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "")
                             + "|77777777" + "||77777777|" + "||||||2|998777777777" + "|1|998777777777"
                             + "|||||||||||||||||||||||||||||||||||");
-                }
-
-
-                else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null && fizProjection.getTelhome() == null && fizProjection.getTelmobil() == null) {
+                } else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null && fizProjection.getTelhome() == null && fizProjection.getTelmobil() == null) {
                     writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
                             + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + inputDateFormatter.format(fizProjection.getDatsRojd())
                             + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
                             + "|2|77777777|" + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "")
                             + "|" + inputDateFormatter.format(fizProjection.getVidanPasp()) + "||77777777|" + "||||||2|998777777777" + "|1|998777777777"
                             + "|||||||||||||||||||||||||||||||||||");
-                }
-
-                else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null &&
+                } else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null &&
                         fizProjection.getDatsRojd() == null && fizProjection.getSerNumPasp() == null &&
                         fizProjection.getVidanPasp() == null && fizProjection.getTelhome() == null) {
                     writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
@@ -116,9 +110,7 @@ public class ReportService {
                             + "|77777777" + "||77777777|" + "||||||2|"
                             + fizProjection.getTelmobil().replaceAll("\\s", "") + "|1|77777777"
                             + "|||||||||||||||||||||||||||||||||||");
-                }
-
-                else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null) {
+                } else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null) {
                     writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
                             + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + inputDateFormatter.format(fizProjection.getDatsRojd())
                             + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
@@ -126,9 +118,7 @@ public class ReportService {
                             + "|" + inputDateFormatter.format(fizProjection.getVidanPasp()) + "||77777777" + "||||||2|"
                             + fizProjection.getTelmobil().replaceAll("\\s", "") + "|1|" + fizProjection.getTelhome().replaceAll("\\s", "")
                             + "|||||||||||||||||||||||||||||||||||");
-                }
-
-                else if (fizProjection.getInn() == null) {
+                } else if (fizProjection.getInn() == null) {
                     writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
                             + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + inputDateFormatter.format(fizProjection.getDatsRojd())
                             + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
@@ -136,9 +126,7 @@ public class ReportService {
                             + "|" + inputDateFormatter.format(fizProjection.getVidanPasp()) + "||" + inputDateFormatter.format(fizProjection.getPaspdo()) + "||||||2|"
                             + fizProjection.getTelmobil().replaceAll("\\s", "") + "|1|" + fizProjection.getTelhome().replaceAll("\\s", "")
                             + "|||||||||||||||||||||||||||||||||||");
-                }
-
-                else if (fizProjection.getPaspdo() == null) {
+                } else if (fizProjection.getPaspdo() == null) {
                     writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
                             + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + inputDateFormatter.format(fizProjection.getDatsRojd())
                             + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
@@ -146,10 +134,8 @@ public class ReportService {
                             + "|" + inputDateFormatter.format(fizProjection.getVidanPasp()) + "||77777777|" + "||||||2|"
                             + fizProjection.getTelmobil().replaceAll("\\s", "") + "|1|" + fizProjection.getTelhome().replaceAll("\\s", "")
                             + "|||||||||||||||||||||||||||||||||||");
-                }
-
-                else {
-                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen()  !=null ? fizProjection.getKodchlen() : "||") + "|" + fizProjection.getImya() + "|"
+                } else {
+                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "||") + "|" + fizProjection.getImya() + "|"
                             + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + inputDateFormatter.format(fizProjection.getDatsRojd())
                             + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
                             + "|2|" + fizProjection.getInn().replaceAll("\\s", "") + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "")
@@ -168,6 +154,79 @@ public class ReportService {
 //                writer.write("CI|MKOR0001||" + contract[8] + "|" + contract[0] + "|B|" + contract[1] + "|" + contract[2] + "|" + contract[3] + "|" + contract[4] + "|UZS|UZS|" + contract[7] + "|" + contract[16] + "|" + contract[18] + "||" + contract[10] + "|" + contract[11] + "||" + contract[12] + "|" + contract[17] + "|" + contract[16] + "|" + contract[16] + "|" + contract[17] + "||" + contract[19] + "||||" + contract[19] + "|" + contract[20] + "|" + contract[21] + "|" + contract[22] + "|" + contract[23]);
 //                writer.newLine(); // Добавить новую строку
 //            }
+            for (Object[] contract : contracts) {
+                ContractDTO dto = new ContractDTO();
+                dto.setKodchlen((String) contract[0]);
+                dto.setName((String) contract[1]);
+                dto.setNumdog((String) contract[2]);
+                dto.setVidkred((contract[3].toString()));
+                dto.setDatsIzm((Date) contract[4]);
+                dto.setSost((Byte) contract[5]);
+                dto.setStatus((Byte) contract[6]);
+                dto.setDatadog((Date) contract[7]);
+                dto.setDatsZakr((Date) contract[8]);
+                dto.setSumma((BigDecimal) contract[9]);
+                dto.setGraf((Byte) contract[10]);
+                dto.setNalbeznal((Byte) contract[11]);
+                dto.setXatar((Byte) contract[12]);
+                dto.setTipkred((Short) contract[13]);
+                dto.setProsent((BigDecimal) contract[14]);
+                dto.setGrafikDats((Date) contract[17]);
+                dto.setDokDats((Date) contract[16]);
+                dto.setPod((int) contract[18]);
+                dto.setBeforeReport((Date) contract[19]);
+                dto.setAfterReport((Date) contract[20]);
+                dto.setSums_z((BigDecimal) contract[21]);
+                dto.setKodCb((String) contract[22]);
+                dto.setTotal_sums((BigDecimal) contract[23]);
+                dto.setProsr_proc((BigDecimal) contract[24]);
+                dto.setProsr_kred((BigDecimal) contract[25]);
+                dto.setSumVznos((int) contract[26]);
+                dto.setSumVznosAll((int) contract[27]);
+                dto.setNext_summ((BigDecimal) contract[28]);
+                dto.setCounted_payments((int) contract[29]);
+                dto.setCount_sums_prosr_proc((int) contract[30]);
+                dto.setCount_sums_prosr_kred((int) contract[31]);
+
+                String vidKred = "";
+                String status = "";
+                String vznos = "";
+                if (dto.getVidkred().equals("2")) {
+                    vidKred = "25";
+                } else if (dto.getVidkred().equals("1")) {
+                    vidKred = "30";
+                } else if (dto.getVidkred().equals("3")) {
+                    vidKred = "32";
+                }
+
+                if (dto.getStatus().equals("2")) {
+                    status = "AC";
+                } else if (dto.getStatus().equals("5")) {
+                    status = "CL";
+                }
+
+                if (dto.getSumVznosAll() == dto.getSumVznos()) {
+                    vznos = "M";
+                } else if ((dto.getSumVznosAll() == 12 && dto.getSumVznos() == 1) || (dto.getSumVznosAll() == 24 && dto.getSumVznos() == 2)) {
+                    vznos = "Y";
+                } else if ((dto.getSumVznosAll() != 12 && dto.getSumVznos() == 1) || (dto.getSumVznosAll() > dto.getSumVznos())) {
+                    vznos = "I";
+                }
+
+                writer.write("CI|MKOR0001||" + outputDateFormat.format(dto.getDatsIzm()) + "|" + dto.getKodchlen() + "|B|" +
+                        dto.getNumdog().replaceAll("\\s", "") + "|" + vidKred + "|" + status + "|UZS|UZS|" +
+                        outputDateFormat.format(dto.getDatadog()) + "||" + outputDateFormat.format(dto.getGrafikDats()) + "|" +
+                        ((dto.getDatsZakr() != null) ? outputDateFormat.format(dto.getDatsZakr()) : "") + "|" +
+                        outputDateFormat.format(dto.getDokDats()) + "||" + dto.getSumma() + "|" + dto.getSumVznos() + "|" +
+                        vznos + "|MXD|" + dto.getPod() + "|" + ((dto.getBeforeReport() != null) ? outputDateFormat.format(dto.getBeforeReport()) : "") +
+                        "|" + ((dto.getAfterReport() != null) ? outputDateFormat.format(dto.getAfterReport()) : "") + "|" +
+                        ((dto.getNext_summ() != null) ? dto.getNext_summ() : "") + "|" + (dto.getCounted_payments() != 0 ? dto.getCounted_payments() : "") +
+                        "|" + (dto.getTotal_sums().doubleValue() != 0.00 ? dto.getTotal_sums() : "") + "|" +
+                        (dto.getCount_sums_prosr_proc() + dto.getCount_sums_prosr_kred() != 0 ? dto.getCount_sums_prosr_proc() + dto.getCount_sums_prosr_kred() : "") +
+                        "|" + (dto.getCount_sums_prosr_kred() != 0 ? dto.getCount_sums_prosr_kred() : "") + "|" +
+                        (dto.getCount_sums_prosr_proc() != 0 ? dto.getCount_sums_prosr_proc() : "") + "|");
+                writer.newLine();
+            }
             writer.write("FT|MKOR0001|26122023|" + fizProjections.size());
 
             writer.close();
@@ -241,7 +300,7 @@ public class ReportService {
 
 
     public List<ContractDTO> findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie() {
-        List<Object[]> results = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie(11,2023);
+        List<Object[]> results = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie(11, 2023);
         return mapToContractDTO(results);
     }
 
@@ -268,17 +327,16 @@ public class ReportService {
         dto.setXatar((Byte) result[12]);
         dto.setTipkred((Short) result[13]);
         dto.setProsent((BigDecimal) result[14]);
-        dto.setDats((Date) result[16]);
-        dto.setGrafikDats((Date) result[18]);
-        dto.setDokDats((Date) result[17]);
-        dto.setPod((BigDecimal) result[19]);
-        dto.setBeforeReport((Date) result[20]);
-        dto.setAfterReport((Date) result[21]);
-        dto.setSums_z((BigDecimal) result[22]);
-        dto.setKodCb((String) result[23]);
-        dto.setTotal_sums((BigDecimal) result[24]);
-        dto.setProsr_proc((BigDecimal) result[25]);
-        dto.setProsr_kred((BigDecimal) result[26]);
+        dto.setGrafikDats((Date) result[17]);
+        dto.setDokDats((Date) result[16]);
+        dto.setPod((int) result[18]);
+        dto.setBeforeReport((Date) result[19]);
+        dto.setAfterReport((Date) result[20]);
+        dto.setSums_z((BigDecimal) result[21]);
+        dto.setKodCb((String) result[22]);
+        dto.setTotal_sums((BigDecimal) result[23]);
+        dto.setProsr_proc((BigDecimal) result[24]);
+        dto.setProsr_kred((BigDecimal) result[25]);
 
 
         return dto;

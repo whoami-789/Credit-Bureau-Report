@@ -25,10 +25,9 @@ public interface AzolikFizRepository extends JpaRepository<AzolikFiz, String> {
             "                MAX(k.tipkred)                                               AS tipkred," +
             "                MAX(k.prosent)                                               AS prosent," +
             "                MAX(k.kod_dog)                                               AS kod_dog," +
-            "                MAX(k.dats)                                                  AS dats," +
             "                MAX(d.dats)                                                  AS dats_d," +
             "                MAX(g.dats)                                                  AS dats_g," +
-            "                min(g.pog_kred + g.pog_proc)                                 AS pod," +
+            "                cast(max(k.summa / k.srokkred) as INT)                       AS pod," +
             "                (SELECT MIN(g_inner.dats)" +
             "                 FROM grafik g_inner" +
             "                 WHERE g_inner.numdog = k.numdog)                            AS first_dats_g_before_condition," +
@@ -46,7 +45,26 @@ public interface AzolikFizRepository extends JpaRepository<AzolikFiz, String> {
             "                (SELECT SUM(s_inner.sums)" +
             "                 FROM saldo s_inner" +
             "                 WHERE s_inner.ls = k.lsprosr_kred" +
-            "                   AND s_inner.activate = 1)                                 AS total_sums_prosr_kred " +
+            "                   AND s_inner.activate = 1)                                 AS total_sums_prosr_kred, " +
+            "(SELECT count(g_inner.pog_kred)" +
+            "FROM grafik g_inner" +
+            " WHERE g_inner.numdog = k.numdog" +
+            " and g_inner.pog_kred > 0)                                 AS sum_vznos," +
+            "(SELECT count(g_inner.pog_kred)" +
+            "FROM grafik g_inner " +
+            "WHERE g_inner.numdog = k.numdog)                            AS sum_vznos_all," +
+            "MIN(CASE WHEN g.dats > k.dats_izm and k.dats_zakr is null THEN g.pog_proc + g.pog_kred ELSE NULL END) AS next_summ," +
+            "(SELECT count(g_inner.pog_kred)" +
+            "                 FROM grafik g_inner" +
+            "                 WHERE YEAR(g_inner.dats) + MONTH(g_inner.dats) > YEAR(:year) +" +
+            "                                                                  MONTH(:month)" +
+            "                   and g_inner.numdog = k.numdog and k.dats_zakr is null)                            AS counted_payments," +
+            "(SELECT count(d_inner.lscor)" +
+            "                 FROM dok d_inner" +
+            "                 WHERE d_inner.lscor = k.lsprosr_proc)                                 AS count_sums_prosr_proc," +
+            "(SELECT count(d_inner.lscor)" +
+            "                 FROM dok d_inner" +
+            "                 WHERE d_inner.lscor = k.lsprosr_kred)                                 AS count_sums_prosr_kred " +
             "FROM kredit k" +
             "         INNER JOIN" +
             "     azolik_fiz af ON af.kodchlen = k.kod" +

@@ -1,6 +1,5 @@
 SELECT distinct af.kodchlen,
                 af.name,
-                k.kod,
                 k.numdog,
                 k.vidkred,
                 MAX(k.dats_izm)                                              AS dats_izm,
@@ -15,14 +14,13 @@ SELECT distinct af.kodchlen,
                 MAX(k.tipkred)                                               AS tipkred,
                 MAX(k.prosent)                                               AS prosent,
                 MAX(k.kod_dog)                                               AS kod_dog,
-                MAX(k.dats)                                                  AS dats,
                 MAX(d.dats)                                                  AS dats_d,
                 MAX(g.dats)                                                  AS dats_g,
-                min(g.pog_kred + g.pog_proc)                                 AS pod,
+                cast(max(k.summa / k.srokkred) as INT)                       AS pod,
                 (SELECT MIN(g_inner.dats)
                  FROM grafik g_inner
                  WHERE g_inner.numdog = k.numdog)                            AS first_dats_g_before_condition,
-                COUNT(CASE WHEN g.dats > k.dats_izm THEN 1 END) AS sum_prosr,
+                COUNT(CASE WHEN g.dats > k.dats_izm THEN 1 END)              AS sum_prosr,
                 MIN(CASE WHEN g.dats > k.dats_izm THEN g.dats ELSE NULL END) AS first_dats_g_after_condition,
                 MAX(z.sums)                                                  AS sums_z,
                 MAX(z.kod_cb)                                                AS kod_cb,
@@ -37,14 +35,36 @@ SELECT distinct af.kodchlen,
                 (SELECT SUM(s_inner.sums)
                  FROM saldo s_inner
                  WHERE s_inner.ls = k.lsprosr_kred
-                   AND s_inner.activate = 1)                                 AS total_sums_prosr_kred
+                   AND s_inner.activate = 1)                                 AS total_sums_prosr_kred,
+                (SELECT count(g_inner.pog_kred)
+                 FROM grafik g_inner
+                 WHERE g_inner.numdog = k.numdog
+                   and g_inner.pog_kred > 0)                                 AS sum_vznos,
+                (SELECT count(g_inner.pog_kred)
+                 FROM grafik g_inner
+                 WHERE g_inner.numdog = k.numdog)                            AS sum_vznos_all,
+                MIN(CASE
+                        WHEN g.dats > k.dats_izm and k.dats_zakr is null THEN g.pog_proc + g.pog_kred
+                        ELSE NULL END)                                       AS next_summ,
+                (SELECT count(g_inner.pog_kred)
+                 FROM grafik g_inner
+                 WHERE YEAR(g_inner.dats) + MONTH(g_inner.dats) > YEAR(2023) +
+                                                                  MONTH(11)
+                   and g_inner.numdog = k.numdog
+                   and k.dats_zakr is null)                                  AS counted_payments,
+                (SELECT count(d_inner.lscor)
+                 FROM dok d_inner
+                 WHERE d_inner.lscor = k.lsprosr_proc)                                 AS count_sums_prosr_proc,
+                (SELECT count(d_inner.lscor)
+                 FROM dok d_inner
+                 WHERE d_inner.lscor = k.lsprosr_kred)                                 AS count_sums_prosr_kred
 FROM kredit k
          INNER JOIN
      azolik_fiz af ON af.kodchlen = k.kod
          LEFT JOIN
-     (SELECT kod_dog, ls, MAX(dats) AS dats
+     (SELECT kod_dog, ls, lscor, MAX(dats) AS dats
       FROM dok
-      GROUP BY kod_dog, ls) d ON k.kod_dog = d.kod_dog
+      GROUP BY kod_dog, ls, lscor) d ON k.kod_dog = d.kod_dog
          LEFT JOIN
      (SELECT numdog, pog_kred, pog_proc, MAX(dats) AS dats
       FROM grafik
@@ -67,20 +87,3 @@ WHERE MONTH(k.dats_izm) = 11
   and k.numdog = g.numdog
 GROUP BY af.kodchlen, af.name, k.numdog, k.vidkred, k.lspeni, k.lsproc, k.lskred, k.lsprosr_proc, k.lsprosr_kred,
          k.dats_zakr, s.activate, k.kod;
-
-SELECT O.kod, SUM(S.sums * pm) / 1000 as sums
-FROM otch_spr AS O
-         INNER JOIN ls AS LS ON LEFT(LS.ls, 5) = O.bal
-         LEFT OUTER JOIN saldo AS S ON S.ls = LS.ls AND
-                                       S.dats = (SELECT MAX(Dats) FROM saldo WHERE Ls = LS.ls AND Dats <= '01.12.2023')
-GROUP BY O.kod
-
-SELECT otch_spr_282.kod,
-       Replace(CONVERT(nvarchar, CONVERT(Decimal(16, 3), ISNULL(SUM(saldo.sums * pm) / 1000, 0))), ',', ',') as sums
-FROM otch_spr_282
-         INNER JOIN ls ON LEFT(ls.ls, 5) = otch_spr_282.bal
-         LEFT OUTER JOIN saldo ON saldo.ls = ls.ls AND
-                                  saldo.dats = (SELECT MAX(dats) FROM saldo WHERE Ls = ls.ls AND dats <= '01.12.2023')
-GROUP BY otch_spr_282.kod
-
-
