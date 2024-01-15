@@ -1,29 +1,25 @@
 package org.creditbureaureport.service;
 
 import org.creditbureaureport.dto.ContractDTO;
-import org.creditbureaureport.dto.FizDTO;
-import org.creditbureaureport.dto.YurDTO;
+import org.creditbureaureport.dto.DateRangeDTO;
 import org.creditbureaureport.model.AzolikFiz;
 import org.creditbureaureport.model.AzolikYur;
 import org.creditbureaureport.repository.AzolikFizRepository;
 import org.creditbureaureport.repository.AzolikYurRepository;
-import org.creditbureaureport.repository.CreditBureauRepository;
-import org.creditbureaureport.repository.DocumentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.time.LocalDate.of;
 
 
 @Service
@@ -31,27 +27,22 @@ public class ReportService {
 
     private final AzolikFizRepository azolikFizRepository;
     private final AzolikYurRepository yurReportRepository;
-    private final DocumentRepository documentRepository;
-    private final CreditBureauRepository creditBureauRepository;
 
 
     @Autowired
-    public ReportService(AzolikFizRepository reportRepository, AzolikYurRepository yurReportRepository, DocumentRepository documentRepository, CreditBureauRepository creditBureauRepository) {
+    public ReportService(AzolikFizRepository reportRepository, AzolikYurRepository yurReportRepository) {
         this.azolikFizRepository = reportRepository;
         this.yurReportRepository = yurReportRepository;
-        this.documentRepository = documentRepository;
-        this.creditBureauRepository = creditBureauRepository;
     }
 
-    @Transactional(readOnly = true)
-    public List<AzolikFiz> getAllAzolikFiz() {
-        return creditBureauRepository.getAzolikFizRepository().findAll();
-    }
+//    @Transactional(readOnly = true)
+//    public List<AzolikFiz> getAllAzolikFiz() {
+//        return creditBureauRepository.getAzolikFizRepository().findAll();
+//    }
 
-    public String getAllFizProjections() {
-        List<AzolikFiz> fizProjections = azolikFizRepository.findByMonthAndYear(11, 2023);
-        List<AzolikYur> yurProjections = yurReportRepository.findByMonthAndYear(12, 2023);
-        List<Object[]> contracts = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie(11, 2023);
+    public String getAllFizProjections(LocalDate startDate, LocalDate endDate) {
+        List<AzolikFiz> fizProjections = azolikFizRepository.findByMonthAndYear(startDate, endDate);
+//        List<AzolikYur> yurProjections = yurReportRepository.findByMonthAndYear(startDate, endDate);
         List<ContractDTO> contractDTOList = new ArrayList<>();
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
@@ -62,98 +53,49 @@ public class ReportService {
             // Задаем маску формата даты и времени
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
             File file = new File("MKOR0001_CSDF_" + dateFormat.format(currentDate) + ".txt");
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            FileOutputStream fos = new FileOutputStream(file);
+            // Запись BOM для UTF-8 в начало файла
+            fos.write(0xEF);
+            fos.write(0xBB);
+            fos.write(0xBF);
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fos, StandardCharsets.UTF_8));
             writer.write("HD|MKOR0001|" + "26122023" + "|1.0|1|Initial test");
             writer.newLine();
+
+
             for (AzolikFiz fizProjection : fizProjections) {
                 String genderCode = fizProjection.getFsobst() == 1 ? "M" : "F";
-
-
-                if (fizProjection.getIndpred() == 1) {
-                    writer.write("ID|MKOR0001||" + outputDateFormat.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|" + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + outputDateFormat.format(fizProjection.getDatsRojd()) + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension() + "|2|" + fizProjection.getInn().replaceAll("\\s", "") + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "") + "|" + outputDateFormat.format(fizProjection.getVidanPasp()) + "||" + outputDateFormat.format(fizProjection.getPaspdo()) + "||||||2|" + fizProjection.getTelmobil().replaceAll("\\s", "") + "|1|" + fizProjection.getTelhome().replaceAll("\\s", "") + "||||||||" + fizProjection.getName() + "||" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "||||||||||||3|" + fizProjection.getInn() + "|||2|" + fizProjection.getTelmobil() + "|1|" + fizProjection.getTelhome());
-                } else if (fizProjection.getLsvznos() != null) System.out.println(fizProjection.getLsvznos());
-
-                else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null &&
-                        fizProjection.getVidanPasp() == null && fizProjection.getDatsRojd() == null &&
-                        fizProjection.getSerNumPasp() == null && fizProjection.getTelmobil() == null &&
-                        fizProjection.getTelhome() == null) {
-                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
-                            + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|77777777"
-                            + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
-                            + "|2|77777777|" + "|" + fizProjection.getTipDok() + "|77777777"
-                            + "|77777777" + "||77777777|" + "||||||2|77777777"
-                            + "|1|77777777"
-                            + "|||||||||||||||||||||||||||||||||||");
-                } else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null &&
-                        fizProjection.getTelhome() == null && fizProjection.getTelmobil() == null &&
-                        fizProjection.getVidanPasp() == null && fizProjection.getDatsRojd() == null) {
-                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
-                            + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|77777777"
-                            + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
-                            + "|2|77777777|" + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "")
-                            + "|77777777" + "||77777777|" + "||||||2|998777777777" + "|1|998777777777"
-                            + "|||||||||||||||||||||||||||||||||||");
-                } else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null && fizProjection.getTelhome() == null && fizProjection.getTelmobil() == null) {
-                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
-                            + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + inputDateFormatter.format(fizProjection.getDatsRojd())
-                            + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
-                            + "|2|77777777|" + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "")
-                            + "|" + inputDateFormatter.format(fizProjection.getVidanPasp()) + "||77777777|" + "||||||2|998777777777" + "|1|998777777777"
-                            + "|||||||||||||||||||||||||||||||||||");
-                } else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null &&
-                        fizProjection.getDatsRojd() == null && fizProjection.getSerNumPasp() == null &&
-                        fizProjection.getVidanPasp() == null && fizProjection.getTelhome() == null) {
-                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
-                            + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|77777777"
-                            + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
-                            + "|2|77777777|" + "|" + fizProjection.getTipDok() + "|77777777"
-                            + "|77777777" + "||77777777|" + "||||||2|"
-                            + fizProjection.getTelmobil().replaceAll("\\s", "") + "|1|77777777"
-                            + "|||||||||||||||||||||||||||||||||||");
-                } else if (fizProjection.getInn() == null && fizProjection.getPaspdo() == null) {
-                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
-                            + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + inputDateFormatter.format(fizProjection.getDatsRojd())
-                            + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
-                            + "|2|77777777|" + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "")
-                            + "|" + inputDateFormatter.format(fizProjection.getVidanPasp()) + "||77777777" + "||||||2|"
-                            + fizProjection.getTelmobil().replaceAll("\\s", "") + "|1|" + fizProjection.getTelhome().replaceAll("\\s", "")
-                            + "|||||||||||||||||||||||||||||||||||");
-                } else if (fizProjection.getInn() == null) {
-                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
-                            + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + inputDateFormatter.format(fizProjection.getDatsRojd())
-                            + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
-                            + "|2|77777777|" + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "")
-                            + "|" + inputDateFormatter.format(fizProjection.getVidanPasp()) + "||" + inputDateFormatter.format(fizProjection.getPaspdo()) + "||||||2|"
-                            + fizProjection.getTelmobil().replaceAll("\\s", "") + "|1|" + fizProjection.getTelhome().replaceAll("\\s", "")
-                            + "|||||||||||||||||||||||||||||||||||");
-                } else if (fizProjection.getPaspdo() == null) {
-                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + fizProjection.getKodchlen() + "|" + fizProjection.getImya() + "|"
-                            + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + inputDateFormatter.format(fizProjection.getDatsRojd())
-                            + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
-                            + "|2|" + fizProjection.getInn().replaceAll("\\s", "") + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "")
-                            + "|" + inputDateFormatter.format(fizProjection.getVidanPasp()) + "||77777777|" + "||||||2|"
-                            + fizProjection.getTelmobil().replaceAll("\\s", "") + "|1|" + fizProjection.getTelhome().replaceAll("\\s", "")
-                            + "|||||||||||||||||||||||||||||||||||");
+                String new_address = "";
+                if (fizProjection.getLsvznos() != null) System.out.println(fizProjection.getLsvznos());
+                String address = fizProjection.getAdres();
+                if (!address.contains("шахар") && !address.contains("туман") &&
+                        !address.contains("tuman") && !address.contains("shahar")) {
+                    Optional<String> nameuOptional = azolikFizRepository.findNameuByKod(fizProjection.getKodRayon());
+                    if (nameuOptional.isPresent()) {
+                        new_address = nameuOptional.get() + " " + fizProjection.getAdres();
+                    }
                 } else {
-                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "||") + "|" + fizProjection.getImya() + "|"
-                            + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + inputDateFormatter.format(fizProjection.getDatsRojd())
-                            + "||UZ||MI|" + fizProjection.getAdres() + "||||" + fizProjection.getKodRayon() + "|" + fizProjection.getKodObl() + "|||||||||||||1|" + fizProjection.getKodPension()
-                            + "|2|" + fizProjection.getInn().replaceAll("\\s", "") + "|" + fizProjection.getTipDok() + "|" + fizProjection.getSerNumPasp().replaceAll("\\s", "")
-                            + "|" + inputDateFormatter.format(fizProjection.getVidanPasp()) + "||" + inputDateFormatter.format(fizProjection.getPaspdo()) + "||||||2|"
-                            + fizProjection.getTelmobil().replaceAll("\\s", "") + "|1|" + fizProjection.getTelhome().replaceAll("\\s", "")
-                            + "|||||||||||||||||||||||||||||||||||");
+                    new_address = fizProjection.getAdres();
                 }
+
+                writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
+                        + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
+                        + "||UZ||MI|" + new_address + "||||" + "|" + "|||||||||||||1|" + fizProjection.getKodPension()
+                        + "|2|" + ((fizProjection.getInn() != null) ? (fizProjection.getInn().replaceAll("\\s", "")) : "") + "|1" + "|" +
+                        ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
+                        + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
+                        "||" + ((fizProjection.getPaspdo() != null) ? (inputDateFormatter.format(fizProjection.getPaspdo())) : "") + "||||||2|"
+                        + ((fizProjection.getTelmobil() != null) ? (fizProjection.getTelmobil().replaceAll("\\s", "")) : "")
+                        + "|1|" + ((fizProjection.getTelhome() != null) ? (fizProjection.getTelhome().replaceAll("\\s", "")) : "")
+                        + "|||||||||||||||||||||||||||||||||||");
                 writer.newLine(); // Добавить новую строку
             }
 //            for (AzolikYur yurProjection : yurProjections) {
 //                writer.write("BD|MKOR0001||" + inputDateFormatter.format(yurProjection.getDatsIzm()) + "|" + yurProjection.getKodchlen() + "|" + yurProjection.getName() + "|" + yurProjection.getShotname() + "|" + "||||||||||" + yurProjection.getAdres() + "||||" + yurProjection.getKodRayon() + "|" + yurProjection.getKodObl() + "||||||||||||3|" + yurProjection.getInn() + "||||2|" + yurProjection.getTelmobil().replaceAll("\\s", "") + "|1|" + yurProjection.getTelhome().replaceAll("\\s", ""));
 //                writer.newLine(); // Добавить новую строку
 //            }
-//            for (Object[] contract : contracts) {
-//                System.out.println(Arrays.toString(contract));
-//                writer.write("CI|MKOR0001||" + contract[8] + "|" + contract[0] + "|B|" + contract[1] + "|" + contract[2] + "|" + contract[3] + "|" + contract[4] + "|UZS|UZS|" + contract[7] + "|" + contract[16] + "|" + contract[18] + "||" + contract[10] + "|" + contract[11] + "||" + contract[12] + "|" + contract[17] + "|" + contract[16] + "|" + contract[16] + "|" + contract[17] + "||" + contract[19] + "||||" + contract[19] + "|" + contract[20] + "|" + contract[21] + "|" + contract[22] + "|" + contract[23]);
-//                writer.newLine(); // Добавить новую строку
-//            }
+            List<Object[]> contracts = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie(startDate, endDate);
+
             for (Object[] contract : contracts) {
                 ContractDTO dto = new ContractDTO();
                 dto.setKodchlen((String) contract[0]);
@@ -171,10 +113,11 @@ public class ReportService {
                 dto.setXatar((Byte) contract[12]);
                 dto.setTipkred((Short) contract[13]);
                 dto.setProsent((BigDecimal) contract[14]);
-                dto.setGrafikDats((Date) contract[17]);
-                dto.setDokDats((Date) contract[16]);
-                dto.setPod((int) contract[18]);
-                dto.setBeforeReport((Date) contract[19]);
+                dto.setGrafikDats((Date) contract[16]);
+                dto.setDokDats((Date) contract[15]);
+                dto.setPod((int) contract[17]);
+                dto.setBeforeReport((Date) contract[18]);
+                dto.setSum_prosr((int) contract[19]);
                 dto.setAfterReport((Date) contract[20]);
                 dto.setSums_z((BigDecimal) contract[21]);
                 dto.setKodCb((String) contract[22]);
@@ -187,10 +130,18 @@ public class ReportService {
                 dto.setCounted_payments((int) contract[29]);
                 dto.setCount_sums_prosr_proc((int) contract[30]);
                 dto.setCount_sums_prosr_kred((int) contract[31]);
+                dto.setZ_ls((String) contract[32]);
+                dto.setDate_priem((Date) contract[33]);
+                dto.setDate_vozvrat((Date) contract[34]);
+                dto.setOverdue((String) contract[35]);
+                dto.setKlass((Byte) contract[36]);
 
                 String vidKred = "";
                 String status = "";
                 String vznos = "";
+                String overdue = "";
+                int tiplred = 0;
+
                 if (dto.getVidkred().equals("2")) {
                     vidKred = "25";
                 } else if (dto.getVidkred().equals("1")) {
@@ -199,9 +150,9 @@ public class ReportService {
                     vidKred = "32";
                 }
 
-                if (dto.getStatus().equals("2")) {
+                if (dto.getStatus() == 2) {
                     status = "AC";
-                } else if (dto.getStatus().equals("5")) {
+                } else if (dto.getStatus() == 5) {
                     status = "CL";
                 }
 
@@ -213,21 +164,50 @@ public class ReportService {
                     vznos = "I";
                 }
 
+                if (dto.getTipkred() == 2) {
+                    tiplred = 3;
+                } else tiplred = 1;
+
+                if (dto.getOverdue().equals("0")) {
+                    overdue = "";
+                } else if (dto.getOverdue().equals("1-29")) {
+                    overdue = "2";
+                } else if (dto.getOverdue().equals("30-59")) {
+                    overdue = "3";
+                } else if (dto.getOverdue().equals("60-89")) {
+                    overdue = "4";
+                } else if (dto.getOverdue().equals("90-119")) {
+                    overdue = "5";
+                } else if (dto.getOverdue().equals("120-149")) {
+                    overdue = "6";
+                } else if (dto.getOverdue().equals("150-179")) {
+                    overdue = "7";
+                } else if (dto.getOverdue().equals(">=180")) {
+                    overdue = "8";
+                }
+
+                int total_sum_prosr = dto.getCount_sums_prosr_proc() + dto.getCount_sums_prosr_kred();
+
                 writer.write("CI|MKOR0001||" + outputDateFormat.format(dto.getDatsIzm()) + "|" + dto.getKodchlen() + "|B|" +
-                        dto.getNumdog().replaceAll("\\s", "") + "|" + vidKred + "|" + status + "|UZS|UZS|" +
+                        dto.getNumdog().replaceAll("\\s", "") + "|" + vidKred + "|" + status + "||UZS|" +
                         outputDateFormat.format(dto.getDatadog()) + "||" + outputDateFormat.format(dto.getGrafikDats()) + "|" +
                         ((dto.getDatsZakr() != null) ? outputDateFormat.format(dto.getDatsZakr()) : "") + "|" +
-                        outputDateFormat.format(dto.getDokDats()) + "||" + dto.getSumma() + "|" + dto.getSumVznos() + "|" +
-                        vznos + "|MXD|" + dto.getPod() + "|" + ((dto.getBeforeReport() != null) ? outputDateFormat.format(dto.getBeforeReport()) : "") +
-                        "|" + ((dto.getAfterReport() != null) ? outputDateFormat.format(dto.getAfterReport()) : "") + "|" +
-                        ((dto.getNext_summ() != null) ? dto.getNext_summ() : "") + "|" + (dto.getCounted_payments() != 0 ? dto.getCounted_payments() : "") +
-                        "|" + (dto.getTotal_sums().doubleValue() != 0.00 ? dto.getTotal_sums() : "") + "|" +
-                        (dto.getCount_sums_prosr_proc() + dto.getCount_sums_prosr_kred() != 0 ? dto.getCount_sums_prosr_proc() + dto.getCount_sums_prosr_kred() : "") +
+                        outputDateFormat.format(dto.getDokDats()) + "||" + dto.getSumma().intValue() + "|" + dto.getSumVznos() + "|" +
+                        "M" + "|MXD|" + dto.getPod() + "|" + ((dto.getBeforeReport() != null) ? outputDateFormat.format(dto.getBeforeReport()) : "") +
+                        "|" + dto.getSum_prosr() + "|" + ((dto.getAfterReport() != null) ? outputDateFormat.format(dto.getAfterReport()) : "") + "|" +
+                        ((dto.getNext_summ() != null) ? dto.getNext_summ().intValue() : "") + "|" + (dto.getCounted_payments() != 0 ? dto.getCounted_payments() : "") +
+                        "|" + (dto.getTotal_sums().doubleValue() != 0.00 ? dto.getTotal_sums().intValue() : "") + "|" +
+                        (total_sum_prosr != 0 ? total_sum_prosr : "") +
                         "|" + (dto.getCount_sums_prosr_kred() != 0 ? dto.getCount_sums_prosr_kred() : "") + "|" +
-                        (dto.getCount_sums_prosr_proc() != 0 ? dto.getCount_sums_prosr_proc() : "") + "|");
+                        (dto.getCount_sums_prosr_proc() != 0 ? dto.getCount_sums_prosr_proc() : "") + "|" + overdue + "|" +
+                        "1|" + dto.getKlass() + "|" + tiplred + "|||||||" + dto.getProsent().intValue() + "||||" + dto.getZ_ls() + "|" +
+                        dto.getKodchlen() + "|" + dto.getName() + "|" + dto.getSums_z().intValue() + "|UZS|" +
+                        ((dto.getDate_priem() != null) ? outputDateFormat.format(dto.getDate_priem()) : "") + "|" +
+                        ((dto.getDate_vozvrat() != null) ? outputDateFormat.format(dto.getDate_vozvrat()) : "") + "|" +
+                        dto.getKodCb() + "|||D||||||||||||||||||||||||||||||||||||||||||||||||||||||||");
                 writer.newLine();
             }
-            writer.write("FT|MKOR0001|26122023|" + fizProjections.size());
+            writer.write("FT|MKOR0001|26122023|" + (fizProjections.size() + contracts.size()));
 
             writer.close();
 
@@ -241,68 +221,11 @@ public class ReportService {
         return "Report compiled";
     }
 
-//    private static void createZipArchiveWithUTF8BOM(String zipFileName, File fileToZip) throws IOException {
-//        try (FileOutputStream fos = new FileOutputStream(zipFileName);
-//             ZipArchiveOutputStream zos = new ZipArchiveOutputStream(fos)) {
-//
-//            // Создаем новую запись в архиве
-//            ZipArchiveEntry entry = new ZipArchiveEntry(fileToZip.getName());
-//            zos.putArchiveEntry(entry);
-//
-//            // Записываем данные файла в архив с использованием UTF-8-BOM
-//            try (OutputStreamWriter writer = new OutputStreamWriter(zos, StandardCharsets.UTF_8)) {
-//                writer.write('\ufeff'); // Записываем BOM
-//                IOUtils.copyLarge(fileToZip, writer);
-//            }
-//
-//            // Закрываем текущую запись в архиве
-//            zos.closeArchiveEntry();
-//        }
+
+//    public List<ContractDTO> findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie() {
+//        List<Object[]> results = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie(11, 2023);
+//        return mapToContractDTO(results);
 //    }
-
-    private FizDTO mapToFizDTO(AzolikFiz fizProjection) {
-        FizDTO dto = new FizDTO();
-        dto.setKodchlen(fizProjection.getKodchlen());
-        dto.setDatsIzm(fizProjection.getDatsIzm());
-        dto.setName(fizProjection.getName());
-        dto.setFam(fizProjection.getFam());
-        dto.setImya(fizProjection.getImya());
-        dto.setOtch(fizProjection.getOtch());
-        dto.setFsobst(fizProjection.getFsobst());
-        dto.setDatsRojd(fizProjection.getDatsRojd());
-        dto.setAdres(fizProjection.getAdres());
-        dto.setKodRayon(fizProjection.getKodRayon());
-        dto.setKodObl(fizProjection.getKodObl());
-        dto.setKodPension(fizProjection.getKodPension());
-        dto.setInn(fizProjection.getInn());
-        dto.setTipDok(fizProjection.getTipDok());
-        dto.setSerNumPasp(fizProjection.getSerNumPasp());
-        dto.setVidanPasp(fizProjection.getVidanPasp());
-        dto.setPaspdo(fizProjection.getPaspdo());
-        dto.setTelmobil(fizProjection.getTelmobil());
-        dto.setTelhome(fizProjection.getTelhome());
-        dto.setIndpred(fizProjection.getIndpred());
-        return dto;
-    }
-
-    private YurDTO mapToYurDTO(AzolikYur yurProjection) {
-        YurDTO dto = new YurDTO();
-        dto.setKodchlen(yurProjection.getKodchlen());
-        dto.setDatsIzm(yurProjection.getDatsIzm());
-        dto.setName(yurProjection.getName());
-        dto.setAdres(yurProjection.getAdres());
-        dto.setKodRayon(yurProjection.getKodRayon());
-        dto.setKodObl(yurProjection.getKodObl());
-        dto.setTelmobil(yurProjection.getTelmobil());
-        dto.setTelhome(yurProjection.getTelhome());
-        return dto;
-    }
-
-
-    public List<ContractDTO> findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie() {
-        List<Object[]> results = azolikFizRepository.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie(11, 2023);
-        return mapToContractDTO(results);
-    }
 
     private List<ContractDTO> mapToContractDTO(List<Object[]> results) {
         return results.stream()

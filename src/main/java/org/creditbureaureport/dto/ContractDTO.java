@@ -45,6 +45,7 @@ public class ContractDTO {
 
     private int pod;
     private Date beforeReport;
+    private int sum_prosr;
     private Date afterReport;
     private BigDecimal sums_z;
     private BigDecimal total_sums;
@@ -56,6 +57,12 @@ public class ContractDTO {
     private int counted_payments;
     private int count_sums_prosr_proc;
     private int count_sums_prosr_kred;
+    private String z_ls;
+    private Date date_priem;
+    private Date date_vozvrat;
+    private String overdue;
+    private Byte klass;
+
 
 
     public ContractDTO(ContractDTO contractDTO) {

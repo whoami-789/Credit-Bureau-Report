@@ -13,7 +13,6 @@ SELECT distinct af.kodchlen,
                 MAX(k.xatar)                                                 AS xatar,
                 MAX(k.tipkred)                                               AS tipkred,
                 MAX(k.prosent)                                               AS prosent,
-                MAX(k.kod_dog)                                               AS kod_dog,
                 MAX(d.dats)                                                  AS dats_d,
                 MAX(g.dats)                                                  AS dats_g,
                 cast(max(k.summa / k.srokkred) as INT)                       AS pod,
@@ -48,16 +47,22 @@ SELECT distinct af.kodchlen,
                         ELSE NULL END)                                       AS next_summ,
                 (SELECT count(g_inner.pog_kred)
                  FROM grafik g_inner
-                 WHERE YEAR(g_inner.dats) + MONTH(g_inner.dats) > YEAR(2023) +
-                                                                  MONTH(11)
-                   and g_inner.numdog = k.numdog
+                 WHERE g_inner.numdog = k.numdog
                    and k.dats_zakr is null)                                  AS counted_payments,
                 (SELECT count(d_inner.lscor)
                  FROM dok d_inner
-                 WHERE d_inner.lscor = k.lsprosr_proc)                                 AS count_sums_prosr_proc,
+                 WHERE d_inner.lscor = k.lsprosr_proc
+                   and d_inner.tipdoc = 6)                                   AS count_sums_prosr_proc,
                 (SELECT count(d_inner.lscor)
                  FROM dok d_inner
-                 WHERE d_inner.lscor = k.lsprosr_kred)                                 AS count_sums_prosr_kred
+                 WHERE d_inner.lscor = k.lsprosr_kred
+                   and d_inner.tipdoc = 6)                                   AS count_sums_prosr_kred,
+                max(z.ls)                                                    as z_ls,
+                max(zx.data_priem)                                           as zx_priem,
+                max(zx.data_vozvrat)                                         as zx_vozvrat,
+                (SELECT OverduePeriod
+                 FROM dbo.SpisokProsrochennixKreditov(k.numdog, '2023-11-03'))
+
 FROM kredit k
          INNER JOIN
      azolik_fiz af ON af.kodchlen = k.kod
@@ -74,16 +79,19 @@ FROM kredit k
       FROM saldo
       GROUP BY ls, activate) s ON d.ls = s.ls
          LEFT JOIN
-     (SELECT numdog, MAX(sums) AS sums, MAX(kod_cb) AS kod_cb
+     (SELECT numdog, ls, MAX(sums) AS sums, MAX(kod_cb) AS kod_cb
       FROM zalog
-      GROUP BY numdog) z ON g.numdog = z.numdog
-WHERE MONTH(k.dats_izm) = 11
-  AND YEAR(k.dats_izm) = 2023
+      GROUP BY numdog, ls) z ON g.numdog = z.numdog
+         Left JOIN
+     (select data_priem, data_vozvrat, kod_dog
+      from zalog_xranenie) zx on k.kod_dog = zx.kod_dog
+WHERE (k.dats_izm between '2023-11-01' and '2023-11-03'
+    OR d.dats between '2023-11-01' and '2023-11-03')
   AND EXISTS (SELECT 1
               FROM saldo s
               WHERE (s.ls = k.lspeni OR s.ls = k.lsproc OR s.ls = k.lskred
                   OR s.ls = k.lsprosr_proc OR s.ls = k.lsprosr_kred)
                 AND s.activate = 1)
-  and k.numdog = g.numdog
+  AND k.numdog = g.numdog
 GROUP BY af.kodchlen, af.name, k.numdog, k.vidkred, k.lspeni, k.lsproc, k.lskred, k.lsprosr_proc, k.lsprosr_kred,
          k.dats_zakr, s.activate, k.kod;

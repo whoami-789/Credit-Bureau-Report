@@ -1,16 +1,9 @@
 package org.creditbureaureport.controler;
 
-import org.creditbureaureport.dto.ContractDTO;
-import org.creditbureaureport.dto.FizDTO;
-import org.creditbureaureport.model.AzolikFiz;
 import org.creditbureaureport.service.ReportService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDate;
 
 
 @RestController
@@ -23,20 +16,23 @@ public class ReportController {
         this.kreditService = kreditService;
     }
 
+    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping
-    public String getAllFizProjections() {
-        return kreditService.getAllFizProjections();
+    public String getAllFizProjections(
+            @RequestParam("startDate") LocalDate startDate,
+            @RequestParam("endDate") LocalDate endDate) {
+        return kreditService.getAllFizProjections(startDate, endDate);
     }
 
-    @GetMapping("/report")
-    public ResponseEntity<List<ContractDTO>> getAzolikFizContracts() {
-        List<ContractDTO> contracts = kreditService.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie();
-        return new ResponseEntity<>(contracts, HttpStatus.OK);
-    }
+//    @GetMapping("/report")
+//    public ResponseEntity<List<ContractDTO>> getAzolikFizContracts() {
+//        List<ContractDTO> contracts = kreditService.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie();
+//        return new ResponseEntity<>(contracts, HttpStatus.OK);
+//    }
 
-    @GetMapping("/contracts")
-    public ResponseEntity<List<AzolikFiz>> getAllAzolikFiz() {
-        List<AzolikFiz> azolikFizList = kreditService.getAllAzolikFiz();
-        return new ResponseEntity<>(azolikFizList, HttpStatus.OK);
-    }
+//    @GetMapping("/contracts")
+//    public ResponseEntity<List<AzolikFiz>> getAllAzolikFiz() {
+//        List<AzolikFiz> azolikFizList = kreditService.getAllAzolikFiz();
+//        return new ResponseEntity<>(azolikFizList, HttpStatus.OK);
+//    }
 }
