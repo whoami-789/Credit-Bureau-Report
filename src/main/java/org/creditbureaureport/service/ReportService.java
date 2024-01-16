@@ -80,13 +80,13 @@ public class ReportService {
 
                 writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
                         + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
-                        + "||UZ||MI|" + new_address + "||||" + "|" + "|||||||||||||1|" + fizProjection.getKodPension()
-                        + "|2|" + ((fizProjection.getInn() != null) ? (fizProjection.getInn().replaceAll("\\s", "")) : "") + "|1" + "|" +
+                        + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||1|" + fizProjection.getKodPension()
+                        + ((fizProjection.getInn() != null) ? "|2|" + (fizProjection.getInn().replaceAll("\\s", "")) : "|") + "|1" + "|" +
                         ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
                         + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
-                        "||" + ((fizProjection.getPaspdo() != null) ? (inputDateFormatter.format(fizProjection.getPaspdo())) : "") + "||||||2|"
-                        + ((fizProjection.getTelmobil() != null) ? (fizProjection.getTelmobil().replaceAll("\\s", "")) : "")
-                        + "|1|" + ((fizProjection.getTelhome() != null) ? (fizProjection.getTelhome().replaceAll("\\s", "")) : "")
+                        "||" + ((fizProjection.getPaspdo() != null) ? (inputDateFormatter.format(fizProjection.getPaspdo())) : "") + "|||||"
+                        + ((fizProjection.getTelmobil() != null) ? "|2|" + (fizProjection.getTelmobil().replaceAll("\\s", "")) : "|")
+                        + ((fizProjection.getTelhome() != null) ? "|1|" + (fizProjection.getTelhome().replaceAll("\\s", "")) : "|")
                         + "|||||||||||||||||||||||||||||||||||");
                 writer.newLine(); // Добавить новую строку
             }
@@ -189,7 +189,7 @@ public class ReportService {
                 int total_sum_prosr = dto.getCount_sums_prosr_proc() + dto.getCount_sums_prosr_kred();
 
                 writer.write("CI|MKOR0001||" + outputDateFormat.format(dto.getDatsIzm()) + "|" + dto.getKodchlen() + "|B|" +
-                        dto.getNumdog().replaceAll("\\s", "") + "|" + vidKred + "|" + status + "||UZS|" +
+                        dto.getNumdog().replaceAll("\\s", "") + "|" + vidKred + "|" + status + "||UZS|UZS|" +
                         outputDateFormat.format(dto.getDatadog()) + "||" + outputDateFormat.format(dto.getGrafikDats()) + "|" +
                         ((dto.getDatsZakr() != null) ? outputDateFormat.format(dto.getDatsZakr()) : "") + "|" +
                         outputDateFormat.format(dto.getDokDats()) + "||" + dto.getSumma().intValue() + "|" + dto.getSumVznos() + "|" +
