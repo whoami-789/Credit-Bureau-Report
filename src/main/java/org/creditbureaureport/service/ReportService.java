@@ -1,5 +1,6 @@
 package org.creditbureaureport.service;
 
+import org.apache.commons.net.ftp.FTPSClient;
 import org.creditbureaureport.dto.ContractDTO;
 import org.creditbureaureport.dto.DateRangeDTO;
 import org.creditbureaureport.model.AzolikFiz;
@@ -18,6 +19,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static java.time.LocalDate.of;
 
@@ -46,6 +49,8 @@ public class ReportService {
         List<ContractDTO> contractDTOList = new ArrayList<>();
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
+        FTPSClient ftpsClient = new FTPSClient(); // Создаем FTPS клиент
+        FileInputStream fis = null;
 
         try {
             Date currentDate = new Date();
@@ -78,6 +83,20 @@ public class ReportService {
                     new_address = fizProjection.getAdres();
                 }
 
+                String telMobil = "";
+                String telHome = "";
+
+                if (!fizProjection.getTelmobil().replaceAll("\\s", "").isEmpty()) {
+                    telMobil = "2|" + fizProjection.getTelmobil().replaceAll("\\s", "");
+                } else {
+                    telMobil = "|";
+                }
+                if (!fizProjection.getTelhome().replaceAll("\\s", "").isEmpty()) {
+                    telHome = "|1|" + fizProjection.getTelmobil().replaceAll("\\s", "");
+                } else {
+                    telHome = "|";
+                }
+
                 writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
                         + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
                         + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||1|" + fizProjection.getKodPension()
@@ -85,9 +104,7 @@ public class ReportService {
                         ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
                         + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
                         "||" + ((fizProjection.getPaspdo() != null) ? (inputDateFormatter.format(fizProjection.getPaspdo())) : "") + "|||||"
-                        + ((fizProjection.getTelmobil() != null) ? "|2|" + (fizProjection.getTelmobil().replaceAll("\\s", "")) : "|")
-                        + ((fizProjection.getTelhome() != null) ? "|1|" + (fizProjection.getTelhome().replaceAll("\\s", "")) : "|")
-                        + "|||||||||||||||||||||||||||||||||||");
+                        + telMobil + telHome + "|||||||||||||||||||||||||||||||||||");
                 writer.newLine(); // Добавить новую строку
             }
 //            for (AzolikYur yurProjection : yurProjections) {
@@ -211,12 +228,56 @@ public class ReportService {
 
             writer.close();
 
-//            createZipArchiveWithUTF8BOM(file, new File(filePath));
+            String zipFileName = file.getAbsolutePath() + ".zip";    // Создаем имя ZIP-файла
+
+            try (
+                    FileOutputStream fileos = new FileOutputStream(zipFileName);
+                    ZipOutputStream zos = new ZipOutputStream(fileos);
+                    FileInputStream fis2 = new FileInputStream(file)
+            ) {
+                ZipEntry zipEntry = new ZipEntry(file.getName());
+                zos.putNextEntry(zipEntry);
+
+                byte[] bytes = new byte[1024];
+                int length;
+                while ((length = fis2.read(bytes)) >= 0) {
+                    zos.write(bytes, 0, length);
+                }
+
+                zos.closeEntry();
+                System.out.println("Файл успешно упакован в архив: " + zipFileName);
+            }
+
+//            ftpsClient.connect("213.230.64.118", 990); // Соединяемся с сервером
+//            ftpsClient.login("MKOR0001", "Ph4NyTRD"); // Логин и пароль
+//
+//            ftpsClient.execPBSZ(0);  // Защитный буфер
+//            ftpsClient.execPROT("P"); // Защита данных
+//
+//            ftpsClient.enterLocalPassiveMode(); // Пассивный режим
+//
+//            String remoteFilePath = "/path/to/remote/file.txt"; // Путь к файлу на сервере
+//            String localFilePath = "path/to/local/file.txt"; // Путь к вашему локальному файлу
+//
+//            fis = new FileInputStream(localFilePath);
+//
+//            boolean result = ftpsClient.storeFile(remoteFilePath, fis); // Загрузка файла
+//            System.out.println("Upload status: " + result);
 
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Error" + e.getMessage());
         }
+//        finally {
+//            try {
+//                if (fis != null) {
+//                    fis.close();
+//                }
+//                ftpsClient.disconnect();
+//            } catch (IOException ex) {
+//                ex.printStackTrace();
+//            }
+//        }
 
         return "Report compiled";
     }
