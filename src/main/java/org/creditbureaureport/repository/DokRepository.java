@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import javax.print.Doc;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -20,4 +21,7 @@ public interface DokRepository extends JpaRepository<Dokument, Long> {
 
     @Query(value = "Select d from Dokument d inner join Kredit k on d.lscor = k.lsproc or d.lscor = k.lskred where k.lsproc like :lsproc and k.lskred like :lskred")
     List<Dokument> findByKreditLsproc(String lsproc, String lskred);
+
+    List<Dokument> findByDatsBetween(LocalDate start, LocalDate end);
+
 }

@@ -2,7 +2,6 @@ package org.creditbureaureport.controler;
 
 import org.creditbureaureport.dto.CombinedDataDTO;
 import org.creditbureaureport.dto.ContractDetailsDTO;
-import org.creditbureaureport.dto.KreditDTO;
 import org.creditbureaureport.service.ReportService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -54,14 +53,22 @@ public class ReportController {
         return ResponseEntity.ok(contractDetails);
     }
 
+//    @GetMapping("/kredit/dats-izm")
+//    public ResponseEntity<List<KreditDTO>> getKreditsWithDetails(
+//            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+//        List<KreditDTO> kreditDTOs = kreditService.getKreditsWithDetails(startDate, endDate);
+//        if (kreditDTOs.isEmpty()) {
+//            return ResponseEntity.noContent().build();
+//        }
+//        return ResponseEntity.ok(kreditDTOs);
+//    }
+
     @GetMapping("/dok/dats")
-    public ResponseEntity<List<KreditDTO>> getKreditsWithDetails(
+    public ResponseEntity<String> getDokWithDetails(
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<KreditDTO> kreditDTOs = kreditService.getKreditsWithDetails(startDate, endDate);
-        if (kreditDTOs.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(kreditDTOs);
+       kreditService.getReport(startDate, endDate);
+       return ResponseEntity.ok("Success reporting");
     }
 }

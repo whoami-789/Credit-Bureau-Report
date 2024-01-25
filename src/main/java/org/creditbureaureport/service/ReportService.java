@@ -447,6 +447,11 @@ public class ReportService {
         return dto;
     }
 
+    public void getReport(LocalDate startDate, LocalDate endDate) {
+        getKreditsWithDetails(startDate, endDate);
+        getKreditsWithDetailsByDocumentDate(startDate, endDate);
+    }
+
     public List<KreditDTO> getKreditsWithDetails(LocalDate startDate, LocalDate endDate) {
         // Находим кредиты за заданный период
         List<Kredit> kredits = kreditRepository.findByDatsIzmBetween(startDate, endDate);
@@ -521,6 +526,89 @@ public class ReportService {
                 return zalogXranenieDTO;
             }).collect(Collectors.toList());
             kreditDTO.setZalogXranenieList(zalogXranenieDTOs);
+            return kreditDTO;
+        }).collect(Collectors.toList());
+    }
+
+    public List<KreditDTO> getKreditsWithDetailsByDocumentDate(LocalDate startDate, LocalDate endDate) {
+        // Получение документов за заданный период
+        List<Dokument> dokuments = dokRepository.findByDatsBetween(startDate, endDate);
+
+        // Сопоставление документов с кредитами
+        Map<Kredit, List<Dokument>> kreditToDokumentsMap = dokuments.stream()
+                .collect(Collectors.groupingBy(Dokument::getKredit));
+
+        // Трансформация в список KreditDTO
+        return kreditToDokumentsMap.entrySet().stream().map(entry -> {
+            Kredit kredit = entry.getKey();
+            List<Dokument> dokumentsForKredit = entry.getValue();
+
+            KreditDTO kreditDTO = new KreditDTO();
+            // Заполнение данных кредита
+            kreditDTO.setNumdog(kredit.getNumdog());
+            kreditDTO.setDatadog(kredit.getDatadog());
+            kreditDTO.setProsent(kredit.getProsent());
+            kreditDTO.setSumma(kredit.getSumma());
+            kreditDTO.setDatsIzm(kredit.getDatsIzm());
+            // ...
+
+            // Трансформация документов в DokumentDTO и добавление к KreditDTO
+            List<DokumentDTO> dokumentDTOs = dokRepository.findByKreditLsproc(kredit.getLsproc(), kredit.getLskred()).stream().map(dokument -> {
+                DokumentDTO dokumentDTO = new DokumentDTO();
+                // Заполнение данных документа
+                dokumentDTO.setNumdok(dokument.getNumdok());
+                dokumentDTO.setDats(dokument.getDats());
+                dokumentDTO.setSums(dokument.getSums());
+                dokumentDTO.setLs(dokument.getLs());
+                dokumentDTO.setLscor(dokument.getLscor());
+
+                // Получение и добавление сальдо для каждого документа
+                List<SaldoDTO> saldoDTOs = saldoRepository.findByDokumentLscor(dokument.getLscor()).stream().map(saldo -> {
+                    SaldoDTO saldoDTO = new SaldoDTO();
+                    // Заполнение данных сальдо
+                    saldoDTO.setSums(saldo.getSums());
+                    saldoDTO.setDats(saldo.getDats());
+                    saldoDTO.setLs(saldo.getLs());
+                    saldoDTO.setActivate(saldo.getActivate());
+                    // ...
+                    return saldoDTO;
+                }).collect(Collectors.toList());
+                dokumentDTO.setSaldos(saldoDTOs);
+
+                return dokumentDTO;
+            }).collect(Collectors.toList());
+            kreditDTO.setDokuments(dokumentDTOs);
+
+            // Добавление графиков погашения к KreditDTO
+            List<GrafikDTO> grafikDTOs = kredit.getGrafiks().stream().map(grafik -> {
+                GrafikDTO grafikDTO = new GrafikDTO();
+                grafikDTO.setDats(grafik.getDats());
+                grafikDTO.setPogKred(grafik.getPogKred());
+                grafikDTO.setMes(grafik.getMes());
+                grafikDTO.setPogKred(grafik.getPogKred());
+                grafikDTO.setPogProc(grafik.getPogProc());
+                return grafikDTO;
+            }).collect(Collectors.toList());
+            kreditDTO.setGrafiks(grafikDTOs);
+
+            // Добавление залогов к KreditDTO
+            List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream().map(zalog -> {
+                ZalogDTO zalogDTO = new ZalogDTO();
+                zalogDTO.setSums(zalog.getSums());
+                zalogDTO.setKodCb(zalog.getKodCb());
+                return zalogDTO;
+            }).collect(Collectors.toList());
+            kreditDTO.setZalogs(zalogDTOs);
+
+            // Добавление данных из ZalogXranenie к KreditDTO
+            List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream().map(zxr -> {
+                ZalogXranenieDTO zxDTO = new ZalogXranenieDTO();
+                zxDTO.setData_priem(zxr.getData_priem());
+                zxDTO.setData_vozvrat(zxr.getData_vozvrat());
+                return zxDTO;
+            }).collect(Collectors.toList());
+            kreditDTO.setZalogXranenieList(zalogXranenieDTOs);
+
             return kreditDTO;
         }).collect(Collectors.toList());
     }
