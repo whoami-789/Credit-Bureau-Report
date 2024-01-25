@@ -20,8 +20,12 @@ public class Saldo {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "ls", nullable = false, columnDefinition = "nchar(20)")
+    @Column(name = "ls", nullable = false)
     private String ls;
+
+    @ManyToOne
+    @JoinColumn(name = "ls", referencedColumnName = "lscor", insertable=false, updatable=false)
+    private Dokument dokument;
 
     @Column(name = "dats", nullable = false)
     private LocalDate dats;
@@ -31,4 +35,5 @@ public class Saldo {
 
     @Column(name = "activate")
     private Byte activate;
+
 }

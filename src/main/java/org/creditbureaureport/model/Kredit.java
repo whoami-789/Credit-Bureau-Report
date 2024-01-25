@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "kredit")
@@ -196,7 +197,7 @@ public class Kredit {
     private String lsSpiskred;
 
     @Column(name = "dats_izm")
-    private Date datsIzm;
+    private LocalDate datsIzm;
 
     @Column(name = "dats_izm_grafik")
     private Date datsIzmGrafik;
@@ -227,5 +228,24 @@ public class Kredit {
 
     @Transient
     private String lspeni;
+
+    @OneToMany(mappedBy = "kredit")
+    private List<Dokument> dokuments;
+
+    @OneToMany(mappedBy = "kredit")
+    private List<Grafik> grafiks;
+
+    @OneToMany(mappedBy = "kredit")
+    private List<Zalog> zalogs;
+
+    @OneToMany(mappedBy = "kredit")
+    private List<ZalogXranenie> zalogXranenieList;
+
+    @ManyToOne
+    @JoinColumn(name = "kod", referencedColumnName = "kodchlen", insertable = false, updatable = false)
+    private AzolikFiz azolikFiz;
+
+    
+
 }
 

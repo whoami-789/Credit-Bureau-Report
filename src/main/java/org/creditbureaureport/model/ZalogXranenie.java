@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "zalog_xranenie")
 @Data
@@ -13,13 +15,16 @@ import lombok.NoArgsConstructor;
 public class ZalogXranenie {
 
     @Id
-    @Column(name = "kod_dog", nullable = false)
-    private Integer kodDog;
+    @Column(name = "id", nullable = false)
+    private Long id;
 
-    @Column(name = "num_korobki", nullable = false)
-    private Integer numKorobki;
+    @Column(name = "data_priem")
+    private LocalDate data_priem;
+    @Column(name = "data_vozvrat")
+    private LocalDate data_vozvrat;
 
-    @Column(name = "status", nullable = false)
-    private Byte status;
+    @ManyToOne
+    @JoinColumn(name = "kod_dog", referencedColumnName = "kod_dog")
+    private Kredit kredit;
 }
 

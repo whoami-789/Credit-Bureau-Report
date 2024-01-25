@@ -1,15 +1,14 @@
 package org.creditbureaureport.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.apache.commons.net.ftp.FTPSClient;
-import org.creditbureaureport.dto.ContractDTO;
-import org.creditbureaureport.dto.DateRangeDTO;
+import org.creditbureaureport.dto.*;
 import org.creditbureaureport.model.AzolikFiz;
-import org.creditbureaureport.model.AzolikYur;
-import org.creditbureaureport.repository.AzolikFizRepository;
-import org.creditbureaureport.repository.AzolikYurRepository;
+import org.creditbureaureport.model.Dokument;
+import org.creditbureaureport.model.Kredit;
+import org.creditbureaureport.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -22,8 +21,6 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static java.time.LocalDate.of;
-
 
 @Service
 public class ReportService {
@@ -31,11 +28,18 @@ public class ReportService {
     private final AzolikFizRepository azolikFizRepository;
     private final AzolikYurRepository yurReportRepository;
 
+    private final DokRepository dokRepository;
+    private final KreditRepository kreditRepository;
+    private final SaldoRepository saldoRepository;
+
 
     @Autowired
-    public ReportService(AzolikFizRepository reportRepository, AzolikYurRepository yurReportRepository) {
+    public ReportService(AzolikFizRepository reportRepository, AzolikYurRepository yurReportRepository, DokRepository dokRepository, KreditRepository kreditRepository, SaldoRepository saldoRepository) {
         this.azolikFizRepository = reportRepository;
         this.yurReportRepository = yurReportRepository;
+        this.dokRepository = dokRepository;
+        this.kreditRepository = kreditRepository;
+        this.saldoRepository = saldoRepository;
     }
 
 //    @Transactional(readOnly = true)
@@ -50,7 +54,6 @@ public class ReportService {
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
         FTPSClient ftpsClient = new FTPSClient(); // Создаем FTPS клиент
-        FileInputStream fis = null;
 
         try {
             Date currentDate = new Date();
@@ -248,36 +251,29 @@ public class ReportService {
                 System.out.println("Файл успешно упакован в архив: " + zipFileName);
             }
 
-//            ftpsClient.connect("213.230.64.118", 990); // Соединяемся с сервером
-//            ftpsClient.login("MKOR0001", "Ph4NyTRD"); // Логин и пароль
-//
-//            ftpsClient.execPBSZ(0);  // Защитный буфер
-//            ftpsClient.execPROT("P"); // Защита данных
-//
-//            ftpsClient.enterLocalPassiveMode(); // Пассивный режим
-//
-//            String remoteFilePath = "/path/to/remote/file.txt"; // Путь к файлу на сервере
-//            String localFilePath = "path/to/local/file.txt"; // Путь к вашему локальному файлу
-//
-//            fis = new FileInputStream(localFilePath);
-//
-//            boolean result = ftpsClient.storeFile(remoteFilePath, fis); // Загрузка файла
-//            System.out.println("Upload status: " + result);
+            try (FileInputStream zipFis = new FileInputStream(zipFileName)) {
+                ftpsClient.connect("213.230.64.118", 990); // Адрес и порт сервера
+                ftpsClient.login("MKOR0001", "Ph4NyTRD"); // Логин и пароль
 
+                ftpsClient.execPBSZ(0);  // Защитный буфер
+                ftpsClient.execPROT("P"); // Защита данных
+                ftpsClient.enterLocalPassiveMode(); // Пассивный режим
+
+                String remoteFilePath = "/Submission/Input/" + zipFileName; // Путь на сервере
+
+                boolean result = ftpsClient.storeFile(remoteFilePath, zipFis); // Загрузка файла
+                System.out.println("Upload status: " + result);
+            }
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Error" + e.getMessage());
+        } finally {
+            try {
+                ftpsClient.disconnect();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
-//        finally {
-//            try {
-//                if (fis != null) {
-//                    fis.close();
-//                }
-//                ftpsClient.disconnect();
-//            } catch (IOException ex) {
-//                ex.printStackTrace();
-//            }
-//        }
 
         return "Report compiled";
     }
@@ -325,6 +321,305 @@ public class ReportService {
 
         return dto;
     }
+
+
+    public List<CombinedDataDTO> fetchCombinedData() {
+        List<CombinedDataDTO> combinedData = new ArrayList<>();
+
+        // Пример объединения данных (простой, для демонстрации)
+        List<Dokument> dokList = dokRepository.findAll();
+        List<Kredit> kreditList = kreditRepository.findAll();
+        List<AzolikFiz> azolikFizList = azolikFizRepository.findAll();
+
+        for (int i = 0; i < Math.min(Math.min(dokList.size(), kreditList.size()), azolikFizList.size()); i++) {
+            CombinedDataDTO dto = new CombinedDataDTO();
+            dto.setDok(dokList.get(i));
+            dto.setKredit(kreditList.get(i));
+            dto.setAzolikFiz(azolikFizList.get(i));
+            combinedData.add(dto);
+        }
+
+        return combinedData;
+    }
+
+    public ContractDetailsDTO getContractDetailsByNumdog(String kod) {
+        Optional<Kredit> kreditOpt = kreditRepository.findByNumdog(kod);
+        if (!kreditOpt.isPresent()) {
+            // Обработка отсутствия Kredit
+            throw new EntityNotFoundException("Kredit with kod " + kod + " not found");
+        }
+        Kredit kredit = kreditOpt.get();
+
+        ContractDetailsDTO dto = new ContractDetailsDTO();
+
+        // Извлечение данных из Kredit
+        dto.setNumdog(kredit.getNumdog());
+        dto.setDatadog(kredit.getDatadog());
+        dto.setSumma(kredit.getSumma());
+        dto.setProsent(kredit.getProsent());
+        dto.setDatsIzm(kredit.getDatsIzm());
+        // Добавьте другие поля Kredit по необходимости
+
+        // Извлечение данных из AzolikFiz, связанных с Kredit
+        AzolikFiz azolikFiz = kredit.getAzolikFiz();
+        if (azolikFiz != null) {
+            dto.setKodchlen(azolikFiz.getKodchlen());
+            dto.setName(azolikFiz.getName());
+            // Добавьте другие поля AzolikFiz по необходимости
+        }
+
+        // Извлечение данных из Dokument, связанных с Kredit
+        List<DokumentDTO> dokumentDTOs = kredit.getDokuments().stream()
+                .map(dokument -> {
+                    DokumentDTO dokumentDTO = new DokumentDTO();
+                    dokumentDTO.setNumdok(dokument.getNumdok());
+                    dokumentDTO.setDats(dokument.getDats());
+                    dokumentDTO.setSums(dokument.getSums());
+                    // Установка других полей
+                    return dokumentDTO;
+                }).toList();
+
+        dto.setDokuments(dokumentDTOs);
+
+        // Извлечение данных из Grafik
+        List<GrafikDTO> grafikDTOs = kredit.getGrafiks().stream()
+                .map(grafik -> {
+                    GrafikDTO grafikDTO = new GrafikDTO();
+                    grafikDTO.setDats(grafik.getDats());
+                    grafikDTO.setPogKred(grafik.getPogKred());
+                    grafikDTO.setPogProc(grafik.getPogProc());
+                    grafikDTO.setOstatok(grafik.getOstatok());
+                    grafikDTO.setMes(grafik.getMes());
+                    grafikDTO.setSost(grafik.getSost());
+                    // Установка других полей
+                    return grafikDTO;
+                }).toList();
+
+        dto.setGrafiks(grafikDTOs);
+
+        // Извлечение данных из Saldo
+        List<SaldoDTO> saldoDTOs = new ArrayList<>();
+        for (Dokument dokument : kredit.getDokuments()) {
+            saldoDTOs.addAll(dokument.getSaldos().stream()
+                    .filter(saldo -> saldo.getActivate() != null && saldo.getActivate() == 1) // Фильтрация активированных записей
+                    .map(saldo -> {
+                        SaldoDTO saldoDTO = new SaldoDTO();
+                        saldoDTO.setDats(saldo.getDats());
+                        saldoDTO.setSums(saldo.getSums());
+                        saldoDTO.setActivate(saldo.getActivate());
+                        // Установка других полей
+                        return saldoDTO;
+                    })
+                    .toList());
+        }
+
+        dto.setSaldos(saldoDTOs);
+
+
+        // Извлечение данных из Zalog
+        List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream()
+                .map(zalog -> {
+                    ZalogDTO zalogDTO = new ZalogDTO();
+                    zalogDTO.setSums(zalog.getSums());
+                    zalogDTO.setLs(zalog.getLs());
+                    zalogDTO.setKodCb(zalog.getKodCb());
+                    // Установка других полей
+                    return zalogDTO;
+                })
+                .collect(Collectors.toList());
+
+        dto.setZalogs(zalogDTOs);
+
+
+        // Извлечение данных из ZalogXranenie
+        List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream()
+                .map(zalogXranenie -> {
+                    ZalogXranenieDTO zalogXranenieDTO = new ZalogXranenieDTO();
+                    zalogXranenieDTO.setData_priem(zalogXranenie.getData_priem());
+                    zalogXranenieDTO.setData_vozvrat(zalogXranenie.getData_vozvrat());
+                    // Установка других полей
+                    return zalogXranenieDTO;
+                })
+                .collect(Collectors.toList());
+
+        dto.setZalogXranenieList(zalogXranenieDTOs);
+
+        return dto;
+    }
+
+    public List<KreditDTO> getKreditsWithDetails(LocalDate startDate, LocalDate endDate) {
+        // Находим кредиты за заданный период
+        List<Kredit> kredits = kreditRepository.findByDatsIzmBetween(startDate, endDate);
+
+        // Трансформируем каждый Kredit в KreditDTO
+        return kredits.stream().map(kredit -> {
+            KreditDTO kreditDTO = new KreditDTO();
+            // Заполнение данных кредита
+            kreditDTO.setNumdog(kredit.getNumdog());
+            kreditDTO.setDatadog(kredit.getDatadog());
+            kreditDTO.setProsent(kredit.getProsent());
+            kreditDTO.setSumma(kredit.getSumma());
+            kreditDTO.setDatsIzm(kredit.getDatsIzm());
+            // ...
+
+            // Получение и добавление документов
+            List<DokumentDTO> dokumentDTOs = dokRepository.findByKreditLsproc(kredit.getLsproc(), kredit.getLskred()).stream().map(dokument -> {
+                DokumentDTO dokumentDTO = new DokumentDTO();
+                // Заполнение данных документа
+                dokumentDTO.setNumdok(dokument.getNumdok());
+                dokumentDTO.setDats(dokument.getDats());
+                dokumentDTO.setSums(dokument.getSums());
+                dokumentDTO.setLs(dokument.getLs());
+                dokumentDTO.setLscor(dokument.getLscor());
+
+                // Получение и добавление сальдо для каждого документа
+                List<SaldoDTO> saldoDTOs = saldoRepository.findByDokumentLscor(dokument.getLscor()).stream().map(saldo -> {
+                    SaldoDTO saldoDTO = new SaldoDTO();
+                    // Заполнение данных сальдо
+                    saldoDTO.setSums(saldo.getSums());
+                    saldoDTO.setDats(saldo.getDats());
+                    saldoDTO.setLs(saldo.getLs());
+                    saldoDTO.setActivate(saldo.getActivate());
+                    // ...
+                    return saldoDTO;
+                }).collect(Collectors.toList());
+                dokumentDTO.setSaldos(saldoDTOs);
+
+                return dokumentDTO;
+            }).collect(Collectors.toList());
+            kreditDTO.setDokuments(dokumentDTOs);
+
+            // Получение и добавление графиков погашения
+            List<GrafikDTO> grafikDTOs = kredit.getGrafiks().stream().map(grafik -> {
+                GrafikDTO grafikDTO = new GrafikDTO();
+                // Заполнение данных графика
+                grafikDTO.setDats(grafik.getDats());
+                grafikDTO.setPogKred(grafik.getPogKred());
+                grafikDTO.setMes(grafik.getMes());
+                grafikDTO.setPogKred(grafik.getPogKred());
+                grafikDTO.setPogProc(grafik.getPogProc());
+                // ...
+                return grafikDTO;
+            }).collect(Collectors.toList());
+            kreditDTO.setGrafiks(grafikDTOs);
+
+            List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream().map(zalog -> {
+                ZalogDTO zalogDTO = new ZalogDTO();
+                zalogDTO.setSums(zalog.getSums());
+                zalogDTO.setKodCb(zalog.getKodCb());
+                // Дополнительное заполнение других полей ZalogDTO
+                return zalogDTO;
+            }).collect(Collectors.toList());
+            kreditDTO.setZalogs(zalogDTOs);
+
+            // Добавление данных из ZalogXranenie
+            List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream().map(zalogXranenie -> {
+                ZalogXranenieDTO zalogXranenieDTO = new ZalogXranenieDTO();
+                zalogXranenieDTO.setData_priem(zalogXranenie.getData_priem());
+                zalogXranenieDTO.setData_vozvrat(zalogXranenie.getData_vozvrat());
+                // Дополнительное заполнение других полей ZalogXranenieDTO
+                return zalogXranenieDTO;
+            }).collect(Collectors.toList());
+            kreditDTO.setZalogXranenieList(zalogXranenieDTOs);
+            return kreditDTO;
+        }).collect(Collectors.toList());
+    }
+
+
+//    public List<ContractDetailsDTO> getContractDetailsByDokDats(LocalDate startDate, LocalDate endDate) {
+//        // Получение списка документов за указанный промежуток времени
+//        List<Dokument> dokumentList = dokRepository.findDokumentsWithinDateRangeAndLsPattern(startDate, endDate);
+//
+//
+//        Set<String> lsprocSet = dokumentList.stream()
+//                .map(Dokument::getLscor)
+//                .filter(Objects::nonNull) // Фильтрация, чтобы исключить null значения
+//                .collect(Collectors.toSet());
+//
+//        List<Kredit> kreditList = kreditRepository.findAllByLskredIn(lsprocSet);
+//
+//        // Формирование списка DTO
+//        List<ContractDetailsDTO> dtoList = new ArrayList<>();
+//        for (Kredit kredit : kreditList) {
+//            ContractDetailsDTO dto = new ContractDetailsDTO();
+//
+//            // Заполнение DTO данными из Kredit
+//            dto.setNumdog(kredit.getNumdog());
+//            dto.setDatadog(kredit.getDatadog());
+//            dto.setSumma(kredit.getSumma());
+//            dto.setProsent(kredit.getProsent());
+//            dto.setDatsIzm(kredit.getDatsIzm());
+//
+//            // Извлечение данных из AzolikFiz, связанных с Kredit
+//            AzolikFiz azolikFiz = kredit.getAzolikFiz();
+//            if (azolikFiz != null) {
+//                dto.setKodchlen(azolikFiz.getKodchlen());
+//                dto.setName(azolikFiz.getName());
+//            }
+//
+//            // Добавление данных из Dokument
+//            List<DokumentDTO> dokumentDTOs = kredit.getDokuments().stream()
+//                    .map(dokument -> {
+//                        DokumentDTO dokumentDTO = new DokumentDTO();
+//                        dokumentDTO.setDats(dokument.getDats());
+//                        dokumentDTO.setSums(dokument.getSums());
+//                        return dokumentDTO;
+//                    }).collect(Collectors.toList());
+//            dto.setDokuments(dokumentDTOs);
+//
+//            // Добавление данных из Grafik
+//            List<GrafikDTO> grafikDTOs = kredit.getGrafiks().stream()
+//                    .map(grafik -> {
+//                        GrafikDTO grafikDTO = new GrafikDTO();
+//                        grafikDTO.setDats(grafik.getDats());
+//                        grafikDTO.setPogKred(grafik.getPogKred());
+//                        grafikDTO.setPogProc(grafik.getPogProc());
+//                        grafikDTO.setOstatok(grafik.getOstatok());
+//                        grafikDTO.setMes(grafik.getMes());
+//                        grafikDTO.setSost(grafik.getSost());
+//                        return grafikDTO;
+//                    }).collect(Collectors.toList());
+//            dto.setGrafiks(grafikDTOs);
+//
+//            // Добавление данных из Saldo
+//            List<SaldoDTO> saldoDTOs = kredit.getDokuments().stream() // Используйте документы, связанные с кредитом
+//                    .filter(dokumentList::contains) // Фильтрация документов по интересующему периоду
+//                    .flatMap(dokument -> dokument.getSaldos().stream()) // Преобразование списка документов в поток сальдо
+//                    .map(saldo -> {
+//                        SaldoDTO saldoDTO = new SaldoDTO();
+//                        saldoDTO.setDats(saldo.getDats());
+//                        saldoDTO.setSums(saldo.getSums());
+//                        saldoDTO.setActivate(saldo.getActivate());
+//                        // Дополнительное заполнение других полей SaldoDTO
+//                        return saldoDTO;
+//                    }).collect(Collectors.toList());
+//            dto.setSaldos(saldoDTOs);
+//
+//            // Добавление данных из Zalog
+//            List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream()
+//                    .map(zalog -> {
+//                        ZalogDTO zalogDTO = new ZalogDTO();
+//                        zalogDTO.setSums(zalog.getSums());
+//                        zalogDTO.setKodCb(zalog.getKodCb());
+//                        return zalogDTO;
+//                    }).collect(Collectors.toList());
+//            dto.setZalogs(zalogDTOs);
+//
+//            // Добавление данных из ZalogXranenie
+//            List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream()
+//                    .map(zalogXranenie -> {
+//                        ZalogXranenieDTO zalogXranenieDTO = new ZalogXranenieDTO();
+//                        zalogXranenieDTO.setData_priem(zalogXranenie.getData_priem());
+//                        zalogXranenieDTO.setData_vozvrat(zalogXranenie.getData_vozvrat());
+//                        return zalogXranenieDTO;
+//                    }).collect(Collectors.toList());
+//            dto.setZalogXranenieList(zalogXranenieDTOs);
+//
+//            dtoList.add(dto);
+//        }
+//
+//        return dtoList;
+//    }
 
 
 }

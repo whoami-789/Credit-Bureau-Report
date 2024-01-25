@@ -1,5 +1,6 @@
 package org.creditbureaureport.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "dok")
@@ -54,9 +56,6 @@ public class Dokument {
     @Column(name = "dat_prov")
     private LocalDate datProv;
 
-    @Column(name = "kod_dog")
-    private Integer kodDog;
-
     @Column(name = "datsproc")
     private LocalDate datsProc;
 
@@ -68,4 +67,13 @@ public class Dokument {
 
     @Column(name = "groupstr", columnDefinition = "tinyint")
     private Integer groupStr;
+
+    @ManyToOne
+    @JoinColumn(name = "lscor", referencedColumnName = "lsproc", insertable=false, updatable=false)
+    private Kredit kredit;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "dokument")
+    private List<Saldo> saldos;
+
 }

@@ -18,8 +18,8 @@ public class Zalog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "kod_zalog", nullable = false)
-    private Byte kodZalog;
+    @Column(name = "kod", nullable = false)
+    private Byte kod;
 
     @Column(name = "sums")
     private BigDecimal sums;
@@ -40,7 +40,7 @@ public class Zalog {
     private LocalDate dats;
 
     @Column(name = "dats_snyat")
-    private Date datsSnyat;
+    private LocalDate datsSnyat;
 
     @Column(name = "ls", nullable = false, columnDefinition = "nchar(20)")
     private String ls;
@@ -50,4 +50,8 @@ public class Zalog {
 
     @Column(name = "dopinfo", columnDefinition = "TEXT")
     private String dopinfo;
+
+    @ManyToOne
+    @JoinColumn(name = "numdog", referencedColumnName = "numdog", insertable = false, updatable = false)
+    private Kredit kredit;
 }
