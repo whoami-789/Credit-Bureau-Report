@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -167,7 +168,7 @@ public class Kredit {
     private String lizprodovec;
 
     @Column(name = "dats_zakr")
-    private Date datsZakr;
+    private LocalDate datsZakr;
 
     @Column(name = "dats_prosr")
     private Date datsProsr;
@@ -214,7 +215,7 @@ public class Kredit {
     @Column(name = "klass")
     private Byte klass;
 
-    @Transient
+    @Column(name = "lsprosr_proc")
     private String lsprosrProc;
 
     @Transient
@@ -226,11 +227,8 @@ public class Kredit {
     @Column(name = "xatar")
     private Byte xatar;
 
-    @Transient
+    @Column(name = "lspeni")
     private String lspeni;
-
-    @OneToMany(mappedBy = "kredit")
-    private List<Dokument> dokuments;
 
     @OneToMany(mappedBy = "kredit")
     private List<Grafik> grafiks;

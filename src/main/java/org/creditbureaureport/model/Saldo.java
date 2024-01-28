@@ -23,9 +23,9 @@ public class Saldo {
     @Column(name = "ls", nullable = false)
     private String ls;
 
-    @ManyToOne
-    @JoinColumn(name = "ls", referencedColumnName = "lscor", insertable=false, updatable=false)
-    private Dokument dokument;
+//    @ManyToOne
+//    @JoinColumn(name = "ls", referencedColumnName = "lscor", insertable=false, updatable=false)
+//    private Dokument dokument;
 
     @Column(name = "dats", nullable = false)
     private LocalDate dats;

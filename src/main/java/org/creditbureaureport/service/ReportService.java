@@ -15,7 +15,9 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -369,17 +371,17 @@ public class ReportService {
         }
 
         // Извлечение данных из Dokument, связанных с Kredit
-        List<DokumentDTO> dokumentDTOs = kredit.getDokuments().stream()
-                .map(dokument -> {
-                    DokumentDTO dokumentDTO = new DokumentDTO();
-                    dokumentDTO.setNumdok(dokument.getNumdok());
-                    dokumentDTO.setDats(dokument.getDats());
-                    dokumentDTO.setSums(dokument.getSums());
-                    // Установка других полей
-                    return dokumentDTO;
-                }).toList();
-
-        dto.setDokuments(dokumentDTOs);
+//        List<DokumentDTO> dokumentDTOs = kredit.getDokuments().stream()
+//                .map(dokument -> {
+//                    DokumentDTO dokumentDTO = new DokumentDTO();
+//                    dokumentDTO.setNumdok(dokument.getNumdok());
+//                    dokumentDTO.setDats(dokument.getDats());
+//                    dokumentDTO.setSums(dokument.getSums());
+//                    // Установка других полей
+//                    return dokumentDTO;
+//                }).toList();
+//
+//        dto.setDokuments(dokumentDTOs);
 
         // Извлечение данных из Grafik
         List<GrafikDTO> grafikDTOs = kredit.getGrafiks().stream()
@@ -398,22 +400,22 @@ public class ReportService {
         dto.setGrafiks(grafikDTOs);
 
         // Извлечение данных из Saldo
-        List<SaldoDTO> saldoDTOs = new ArrayList<>();
-        for (Dokument dokument : kredit.getDokuments()) {
-            saldoDTOs.addAll(dokument.getSaldos().stream()
-                    .filter(saldo -> saldo.getActivate() != null && saldo.getActivate() == 1) // Фильтрация активированных записей
-                    .map(saldo -> {
-                        SaldoDTO saldoDTO = new SaldoDTO();
-                        saldoDTO.setDats(saldo.getDats());
-                        saldoDTO.setSums(saldo.getSums());
-                        saldoDTO.setActivate(saldo.getActivate());
-                        // Установка других полей
-                        return saldoDTO;
-                    })
-                    .toList());
-        }
-
-        dto.setSaldos(saldoDTOs);
+//        List<SaldoDTO> saldoDTOs = new ArrayList<>();
+//        for (Dokument dokument : kredit.getDokuments()) {
+//            saldoDTOs.addAll(dokument.getSaldos().stream()
+//                    .filter(saldo -> saldo.getActivate() != null && saldo.getActivate() == 1) // Фильтрация активированных записей
+//                    .map(saldo -> {
+//                        SaldoDTO saldoDTO = new SaldoDTO();
+//                        saldoDTO.setDats(saldo.getDats());
+//                        saldoDTO.setSums(saldo.getSums());
+//                        saldoDTO.setActivate(saldo.getActivate());
+//                        // Установка других полей
+//                        return saldoDTO;
+//                    })
+//                    .toList());
+//        }
+//
+//        dto.setSaldos(saldoDTOs);
 
 
         // Извлечение данных из Zalog
@@ -447,17 +449,38 @@ public class ReportService {
         return dto;
     }
 
-    public void getReport(LocalDate startDate, LocalDate endDate) {
-        getKreditsWithDetails(startDate, endDate);
-        getKreditsWithDetailsByDocumentDate(startDate, endDate);
+    public ReportDTO getReport(LocalDate startDate, LocalDate endDate) {
+//        List<KreditDTO> kreditsByDocumentDate = getKreditsWithDetailsByDocumentDate(startDate, endDate);
+        List<KreditDTO> kreditsByModificationDate = getKreditsWithDetails(startDate, endDate);
+
+        return new ReportDTO(kreditsByModificationDate);
     }
 
     public List<KreditDTO> getKreditsWithDetails(LocalDate startDate, LocalDate endDate) {
         // Находим кредиты за заданный период
-        List<Kredit> kredits = kreditRepository.findByDatsIzmBetween(startDate, endDate);
+        List<Kredit> kredits = kreditRepository.findByDatsIzmBetweenOrStatus(startDate, endDate, (byte) 2);
+        Map<LocalDate, String> refDates = new LinkedHashMap<>();
 
         // Трансформируем каждый Kredit в KreditDTO
-        return kredits.stream().map(kredit -> {
+        List<KreditDTO> kreditDTOList = kredits.stream().map(kredit -> {
+
+
+            LocalDate current = startDate;
+            while (current.isBefore(endDate) || current.equals(endDate)) {
+                LocalDate endOfMonth = current.with(TemporalAdjusters.lastDayOfMonth());
+                if (endOfMonth.isBefore(endDate) || endOfMonth.equals(endDate)) {
+                    refDates.put(endOfMonth, "END_OF_MONTH");
+                    current = endOfMonth.plusDays(1);
+                } else {
+                    // Если endDate не совпадает с концом месяца
+                    if (!endDate.equals(endOfMonth)) {
+                        refDates.put(endDate, "END_DATE");
+                    }
+                    break;
+                }
+            }
+
+            System.out.println("Обработка кредита с ID: " + kredit.getNumdog() + "\n" + kredit.getLskred() + "\n" + kredit.getLsproc() + "\n" + kredit.getLsprosrKred() + "\n" + kredit.getLsprosrProc() + "\n" + kredit.getLspeni());
             KreditDTO kreditDTO = new KreditDTO();
             // Заполнение данных кредита
             kreditDTO.setNumdog(kredit.getNumdog());
@@ -465,10 +488,44 @@ public class ReportService {
             kreditDTO.setProsent(kredit.getProsent());
             kreditDTO.setSumma(kredit.getSumma());
             kreditDTO.setDatsIzm(kredit.getDatsIzm());
-            // ...
+            kreditDTO.setLspeni(kredit.getLspeni());
+            kreditDTO.setLsprosrProc(kredit.getLsprosrProc());
+            kreditDTO.setStatus(kredit.getStatus());
+            kreditDTO.setDatsZakr(kredit.getDatsZakr());
+            kreditDTO.setVidKred(kredit.getVidkred());
+            kreditDTO.setKod(kredit.getKod());
+            kreditDTO.setLsKred(kredit.getLskred());
+            kreditDTO.setLsProc(kredit.getLsproc());
+            kreditDTO.setName(kredit.getAzolikFiz().getName());
+
+            for (Map.Entry<LocalDate, String> entry : refDates.entrySet()) {
+                LocalDate refDate = entry.getKey();
+                // Вызов функции и преобразование в OverdueDTO
+                List<OverdueDTO> overdueDTOs = kreditRepository.SpisProsrKred(kredit.getNumdog(), refDate)
+                        .stream()
+                        .map(resultObject -> {
+                            Object[] resultArray = (Object[]) resultObject; // Приведение к Object[]
+                            System.out.println(Arrays.toString(resultArray));
+                            OverdueDTO overdueDTO = new OverdueDTO();
+                            overdueDTO.setPlannedPaymentDate((java.sql.Date) resultArray[1]); // Первый параметр
+                            overdueDTO.setOverdueSumm((BigDecimal) resultArray[2]); // Второй параметр
+                            overdueDTO.setOverduePeriod((String) resultArray[3]); // Третий параметр
+                            return overdueDTO;
+                        })
+                        .collect(Collectors.toList());
+
+
+                kreditDTO.setOverdue(overdueDTOs);
+            }
 
             // Получение и добавление документов
-            List<DokumentDTO> dokumentDTOs = dokRepository.findByKreditLsproc(kredit.getLsproc(), kredit.getLskred()).stream().map(dokument -> {
+            List<DokumentDTO> dokumentDTOs = dokRepository.findByKreditComplexConditions(
+                    kredit.getLskred(), kredit.getLsproc(), kredit.getLsprosrKred(), kredit.getLsprosrProc(), kredit.getLspeni()
+            ).stream().map(dokument -> {
+                if (dokument == null) {
+                    return null;
+                }
+                System.out.println(dokument.getLs() + "\n" + dokument.getLscor());
                 DokumentDTO dokumentDTO = new DokumentDTO();
                 // Заполнение данных документа
                 dokumentDTO.setNumdok(dokument.getNumdok());
@@ -477,22 +534,26 @@ public class ReportService {
                 dokumentDTO.setLs(dokument.getLs());
                 dokumentDTO.setLscor(dokument.getLscor());
 
-                // Получение и добавление сальдо для каждого документа
-                List<SaldoDTO> saldoDTOs = saldoRepository.findByDokumentLscor(dokument.getLscor()).stream().map(saldo -> {
-                    SaldoDTO saldoDTO = new SaldoDTO();
-                    // Заполнение данных сальдо
-                    saldoDTO.setSums(saldo.getSums());
-                    saldoDTO.setDats(saldo.getDats());
-                    saldoDTO.setLs(saldo.getLs());
-                    saldoDTO.setActivate(saldo.getActivate());
-                    // ...
-                    return saldoDTO;
-                }).collect(Collectors.toList());
-                dokumentDTO.setSaldos(saldoDTOs);
-
                 return dokumentDTO;
             }).collect(Collectors.toList());
             kreditDTO.setDokuments(dokumentDTOs);
+
+            List<SaldoDTO> saldoDTOS = saldoRepository.findByDokumentLscor(kredit.getLskred(), kredit.getLsproc(), kredit.getLsprosrKred(), kredit.getLsprosrProc(), kredit.getLspeni()
+            ).stream().map(saldo -> {
+                if (saldo == null) {
+                    return null;
+                }
+                System.out.println(saldo.getLs());
+                SaldoDTO saldoDTO = new SaldoDTO();
+                // Заполнение данных сальдо
+                saldoDTO.setSums(saldo.getSums());
+                saldoDTO.setDats(saldo.getDats());
+                saldoDTO.setLs(saldo.getLs());
+                saldoDTO.setActivate(saldo.getActivate());
+                //...
+                return saldoDTO;
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+            kreditDTO.setSaldo(saldoDTOS);
 
             // Получение и добавление графиков погашения
             List<GrafikDTO> grafikDTOs = kredit.getGrafiks().stream().map(grafik -> {
@@ -527,187 +588,109 @@ public class ReportService {
             }).collect(Collectors.toList());
             kreditDTO.setZalogXranenieList(zalogXranenieDTOs);
             return kreditDTO;
-        }).collect(Collectors.toList());
+
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+
+        SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
+        DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
+        FTPSClient ftpsClient = new FTPSClient(); // Создаем FTPS клиент
+        StringBuilder dataBuilder = new StringBuilder();
+
+        String vidKred = "";
+        String status = "";
+        String vznos = "";
+        String overdue = "";
+        int tiplred = 0;
+        LocalDate end = endDate;
+
+        for (KreditDTO kreditDTO : kreditDTOList) {
+
+            if (kreditDTO.getVidKred() == 2) {
+                vidKred = "25";
+            } else if (kreditDTO.getVidKred() == 1) {
+                vidKred = "30";
+            } else if (kreditDTO.getVidKred() == 3) {
+                vidKred = "32";
+            }
+
+            String contractPhase = "";
+
+            LocalDate latestDate = kreditDTO.getGrafiks().stream()
+                    .max(Comparator.comparing(GrafikDTO::getDats))
+                    .map(GrafikDTO::getDats)
+                    .orElse(null);
+
+            for (Map.Entry<LocalDate, String> entry : refDates.entrySet()) {
+                LocalDate refDate = entry.getKey();
+                String dateType = entry.getValue(); // "END_OF_MONTH" или "END_DATE"
+
+                if (dateType.equals("END_DATE") && kreditDTO.getDatsIzm().isAfter(startDate)) {
+
+                    if (kreditDTO.getDatsZakr() == null) {
+                        status = "AC";
+                    } else if (kreditDTO.getDatsZakr().equals(refDate) && dateType.equals("END_DATE")) {
+                        status = "AC";
+                    } else if ((latestDate != null && kreditDTO.getDatsZakr().isAfter(latestDate))) {
+                        status = "CA";
+                    } else {
+                        status = "CL";
+                    }
+
+                    dataBuilder.append("CI|MKOR0001||")
+                            .append(inputDateFormatter.format(refDate))
+                            .append("|")
+                            .append(kreditDTO.getKod())
+                            .append("|B|")
+                            .append(kreditDTO.getNumdog().replaceAll("\\s", ""))
+                            .append("|")
+                            .append(vidKred)
+                            .append("|")
+                            .append(status)
+                            .append("||UZS|UZS|")
+                            .append(outputDateFormat.format(kreditDTO.getDatadog()))
+                            .append("|")
+                            .append(outputDateFormat.format(kreditDTO.getDatadog()))
+                            .append("|")
+                            .append(latestDate)
+                            .append("|")
+                            .append("\n");
+
+                } else if (dateType.equals("END_OF_MONTH") && kreditDTO.getDatsIzm().isAfter(startDate)) {
+
+                    if (kreditDTO.getDatsZakr() == null) {
+                        status = "AC";
+                    } else if (kreditDTO.getDatsZakr().equals(refDate) && dateType.equals("END_OF_MONTH")) {
+                        status = "AC";
+                    } else {
+                        status = "CL";
+                    }
+
+                    dataBuilder.append("CI|MKOR0001||")
+                            .append(inputDateFormatter.format(refDate))
+                            .append("|")
+                            .append(kreditDTO.getKod())
+                            .append("|B|")
+                            .append(kreditDTO.getNumdog().replaceAll("\\s", ""))
+                            .append("|")
+                            .append(vidKred)
+                            .append("|")
+                            .append(status)
+                            .append(outputDateFormat.format(kreditDTO.getDatadog()))
+                            .append("|")
+                            .append(outputDateFormat.format(kreditDTO.getDatadog()))
+                            .append("|")
+                            .append(latestDate)
+                            .append("|")
+                            .append("\n");
+
+                }
+            }
+        }
+
+        String finalData = dataBuilder.toString();
+        System.out.println(finalData);
+
+        return kreditDTOList;
     }
-
-    public List<KreditDTO> getKreditsWithDetailsByDocumentDate(LocalDate startDate, LocalDate endDate) {
-        // Получение документов за заданный период
-        List<Dokument> dokuments = dokRepository.findByDatsBetween(startDate, endDate);
-
-        // Сопоставление документов с кредитами
-        Map<Kredit, List<Dokument>> kreditToDokumentsMap = dokuments.stream()
-                .collect(Collectors.groupingBy(Dokument::getKredit));
-
-        // Трансформация в список KreditDTO
-        return kreditToDokumentsMap.entrySet().stream().map(entry -> {
-            Kredit kredit = entry.getKey();
-            List<Dokument> dokumentsForKredit = entry.getValue();
-
-            KreditDTO kreditDTO = new KreditDTO();
-            // Заполнение данных кредита
-            kreditDTO.setNumdog(kredit.getNumdog());
-            kreditDTO.setDatadog(kredit.getDatadog());
-            kreditDTO.setProsent(kredit.getProsent());
-            kreditDTO.setSumma(kredit.getSumma());
-            kreditDTO.setDatsIzm(kredit.getDatsIzm());
-            // ...
-
-            // Трансформация документов в DokumentDTO и добавление к KreditDTO
-            List<DokumentDTO> dokumentDTOs = dokRepository.findByKreditLsproc(kredit.getLsproc(), kredit.getLskred()).stream().map(dokument -> {
-                DokumentDTO dokumentDTO = new DokumentDTO();
-                // Заполнение данных документа
-                dokumentDTO.setNumdok(dokument.getNumdok());
-                dokumentDTO.setDats(dokument.getDats());
-                dokumentDTO.setSums(dokument.getSums());
-                dokumentDTO.setLs(dokument.getLs());
-                dokumentDTO.setLscor(dokument.getLscor());
-
-                // Получение и добавление сальдо для каждого документа
-                List<SaldoDTO> saldoDTOs = saldoRepository.findByDokumentLscor(dokument.getLscor()).stream().map(saldo -> {
-                    SaldoDTO saldoDTO = new SaldoDTO();
-                    // Заполнение данных сальдо
-                    saldoDTO.setSums(saldo.getSums());
-                    saldoDTO.setDats(saldo.getDats());
-                    saldoDTO.setLs(saldo.getLs());
-                    saldoDTO.setActivate(saldo.getActivate());
-                    // ...
-                    return saldoDTO;
-                }).collect(Collectors.toList());
-                dokumentDTO.setSaldos(saldoDTOs);
-
-                return dokumentDTO;
-            }).collect(Collectors.toList());
-            kreditDTO.setDokuments(dokumentDTOs);
-
-            // Добавление графиков погашения к KreditDTO
-            List<GrafikDTO> grafikDTOs = kredit.getGrafiks().stream().map(grafik -> {
-                GrafikDTO grafikDTO = new GrafikDTO();
-                grafikDTO.setDats(grafik.getDats());
-                grafikDTO.setPogKred(grafik.getPogKred());
-                grafikDTO.setMes(grafik.getMes());
-                grafikDTO.setPogKred(grafik.getPogKred());
-                grafikDTO.setPogProc(grafik.getPogProc());
-                return grafikDTO;
-            }).collect(Collectors.toList());
-            kreditDTO.setGrafiks(grafikDTOs);
-
-            // Добавление залогов к KreditDTO
-            List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream().map(zalog -> {
-                ZalogDTO zalogDTO = new ZalogDTO();
-                zalogDTO.setSums(zalog.getSums());
-                zalogDTO.setKodCb(zalog.getKodCb());
-                return zalogDTO;
-            }).collect(Collectors.toList());
-            kreditDTO.setZalogs(zalogDTOs);
-
-            // Добавление данных из ZalogXranenie к KreditDTO
-            List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream().map(zxr -> {
-                ZalogXranenieDTO zxDTO = new ZalogXranenieDTO();
-                zxDTO.setData_priem(zxr.getData_priem());
-                zxDTO.setData_vozvrat(zxr.getData_vozvrat());
-                return zxDTO;
-            }).collect(Collectors.toList());
-            kreditDTO.setZalogXranenieList(zalogXranenieDTOs);
-
-            return kreditDTO;
-        }).collect(Collectors.toList());
-    }
-
-
-//    public List<ContractDetailsDTO> getContractDetailsByDokDats(LocalDate startDate, LocalDate endDate) {
-//        // Получение списка документов за указанный промежуток времени
-//        List<Dokument> dokumentList = dokRepository.findDokumentsWithinDateRangeAndLsPattern(startDate, endDate);
-//
-//
-//        Set<String> lsprocSet = dokumentList.stream()
-//                .map(Dokument::getLscor)
-//                .filter(Objects::nonNull) // Фильтрация, чтобы исключить null значения
-//                .collect(Collectors.toSet());
-//
-//        List<Kredit> kreditList = kreditRepository.findAllByLskredIn(lsprocSet);
-//
-//        // Формирование списка DTO
-//        List<ContractDetailsDTO> dtoList = new ArrayList<>();
-//        for (Kredit kredit : kreditList) {
-//            ContractDetailsDTO dto = new ContractDetailsDTO();
-//
-//            // Заполнение DTO данными из Kredit
-//            dto.setNumdog(kredit.getNumdog());
-//            dto.setDatadog(kredit.getDatadog());
-//            dto.setSumma(kredit.getSumma());
-//            dto.setProsent(kredit.getProsent());
-//            dto.setDatsIzm(kredit.getDatsIzm());
-//
-//            // Извлечение данных из AzolikFiz, связанных с Kredit
-//            AzolikFiz azolikFiz = kredit.getAzolikFiz();
-//            if (azolikFiz != null) {
-//                dto.setKodchlen(azolikFiz.getKodchlen());
-//                dto.setName(azolikFiz.getName());
-//            }
-//
-//            // Добавление данных из Dokument
-//            List<DokumentDTO> dokumentDTOs = kredit.getDokuments().stream()
-//                    .map(dokument -> {
-//                        DokumentDTO dokumentDTO = new DokumentDTO();
-//                        dokumentDTO.setDats(dokument.getDats());
-//                        dokumentDTO.setSums(dokument.getSums());
-//                        return dokumentDTO;
-//                    }).collect(Collectors.toList());
-//            dto.setDokuments(dokumentDTOs);
-//
-//            // Добавление данных из Grafik
-//            List<GrafikDTO> grafikDTOs = kredit.getGrafiks().stream()
-//                    .map(grafik -> {
-//                        GrafikDTO grafikDTO = new GrafikDTO();
-//                        grafikDTO.setDats(grafik.getDats());
-//                        grafikDTO.setPogKred(grafik.getPogKred());
-//                        grafikDTO.setPogProc(grafik.getPogProc());
-//                        grafikDTO.setOstatok(grafik.getOstatok());
-//                        grafikDTO.setMes(grafik.getMes());
-//                        grafikDTO.setSost(grafik.getSost());
-//                        return grafikDTO;
-//                    }).collect(Collectors.toList());
-//            dto.setGrafiks(grafikDTOs);
-//
-//            // Добавление данных из Saldo
-//            List<SaldoDTO> saldoDTOs = kredit.getDokuments().stream() // Используйте документы, связанные с кредитом
-//                    .filter(dokumentList::contains) // Фильтрация документов по интересующему периоду
-//                    .flatMap(dokument -> dokument.getSaldos().stream()) // Преобразование списка документов в поток сальдо
-//                    .map(saldo -> {
-//                        SaldoDTO saldoDTO = new SaldoDTO();
-//                        saldoDTO.setDats(saldo.getDats());
-//                        saldoDTO.setSums(saldo.getSums());
-//                        saldoDTO.setActivate(saldo.getActivate());
-//                        // Дополнительное заполнение других полей SaldoDTO
-//                        return saldoDTO;
-//                    }).collect(Collectors.toList());
-//            dto.setSaldos(saldoDTOs);
-//
-//            // Добавление данных из Zalog
-//            List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream()
-//                    .map(zalog -> {
-//                        ZalogDTO zalogDTO = new ZalogDTO();
-//                        zalogDTO.setSums(zalog.getSums());
-//                        zalogDTO.setKodCb(zalog.getKodCb());
-//                        return zalogDTO;
-//                    }).collect(Collectors.toList());
-//            dto.setZalogs(zalogDTOs);
-//
-//            // Добавление данных из ZalogXranenie
-//            List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream()
-//                    .map(zalogXranenie -> {
-//                        ZalogXranenieDTO zalogXranenieDTO = new ZalogXranenieDTO();
-//                        zalogXranenieDTO.setData_priem(zalogXranenie.getData_priem());
-//                        zalogXranenieDTO.setData_vozvrat(zalogXranenie.getData_vozvrat());
-//                        return zalogXranenieDTO;
-//                    }).collect(Collectors.toList());
-//            dto.setZalogXranenieList(zalogXranenieDTOs);
-//
-//            dtoList.add(dto);
-//        }
-//
-//        return dtoList;
-//    }
-
 
 }

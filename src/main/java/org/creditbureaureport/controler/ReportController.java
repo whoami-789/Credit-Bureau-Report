@@ -2,6 +2,7 @@ package org.creditbureaureport.controler;
 
 import org.creditbureaureport.dto.CombinedDataDTO;
 import org.creditbureaureport.dto.ContractDetailsDTO;
+import org.creditbureaureport.dto.ReportDTO;
 import org.creditbureaureport.service.ReportService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -65,10 +66,10 @@ public class ReportController {
 //    }
 
     @GetMapping("/dok/dats")
-    public ResponseEntity<String> getDokWithDetails(
+    public ResponseEntity<ReportDTO> generateReport(
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-       kreditService.getReport(startDate, endDate);
-       return ResponseEntity.ok("Success reporting");
+        ReportDTO report = kreditService.getReport(startDate, endDate);
+        return ResponseEntity.ok(report);
     }
 }

@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -68,12 +69,5 @@ public class Dokument {
     @Column(name = "groupstr", columnDefinition = "tinyint")
     private Integer groupStr;
 
-    @ManyToOne
-    @JoinColumn(name = "lscor", referencedColumnName = "lsproc", insertable=false, updatable=false)
-    private Kredit kredit;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "dokument")
-    private List<Saldo> saldos;
 
 }
