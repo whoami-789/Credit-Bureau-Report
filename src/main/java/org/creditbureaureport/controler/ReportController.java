@@ -30,41 +30,6 @@ public class ReportController {
         return kreditService.getAllFizProjections(startDate, endDate);
     }
 
-//    @GetMapping("/report")
-//    public ResponseEntity<List<ContractDTO>> getAzolikFizContracts() {
-//        List<ContractDTO> contracts = kreditService.findAzolikFizKreditSaldoGrafikDokZalogZalogDetalZalogXranenie();
-//        return new ResponseEntity<>(contracts, HttpStatus.OK);
-//    }
-
-//    @GetMapping("/contracts")
-//    public ResponseEntity<List<AzolikFiz>> getAllAzolikFiz() {
-//        List<AzolikFiz> azolikFizList = kreditService.getAllAzolikFiz();
-//        return new ResponseEntity<>(azolikFizList, HttpStatus.OK);
-//    }
-
-    @GetMapping("/combined")
-    public ResponseEntity<List<CombinedDataDTO>> getCombinedData() {
-        List<CombinedDataDTO> combinedData = kreditService.fetchCombinedData();
-        return ResponseEntity.ok(combinedData);
-    }
-
-    @GetMapping("/{contractId}")
-    public ResponseEntity<ContractDetailsDTO> getContractDetails(@PathVariable String contractId) {
-        ContractDetailsDTO contractDetails = kreditService.getContractDetailsByNumdog(contractId);
-        return ResponseEntity.ok(contractDetails);
-    }
-
-//    @GetMapping("/kredit/dats-izm")
-//    public ResponseEntity<List<KreditDTO>> getKreditsWithDetails(
-//            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-//            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-//        List<KreditDTO> kreditDTOs = kreditService.getKreditsWithDetails(startDate, endDate);
-//        if (kreditDTOs.isEmpty()) {
-//            return ResponseEntity.noContent().build();
-//        }
-//        return ResponseEntity.ok(kreditDTOs);
-//    }
-
     @GetMapping("/dok/dats")
     public ResponseEntity<ReportDTO> generateReport(
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,

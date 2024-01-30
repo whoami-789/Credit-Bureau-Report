@@ -19,6 +19,7 @@ public class KreditDTO {
     private BigDecimal prosent;
     private LocalDate datsIzm;
     private String lsprosrProc;
+    private String lsprosrKred;
     private String lspeni;
     private Byte status;
     private LocalDate datsZakr;
