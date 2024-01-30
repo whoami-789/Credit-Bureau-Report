@@ -293,3 +293,6 @@ GROUP BY af.kodchlen, af.name, k.numdog, k.vidkred, k.lspeni, k.lsproc, k.lskred
          k.xatar, k.tipkred, k.prosent;
 
 Select * from dok d inner join kredit k on k.lsproc = d.lscor where d.lscor like :koddog
+
+SELECT * from SpisProsrKred ('99002678-16', '2023-11-30')
+SELECT * from SpisokProsrochennixKreditov ('99002678-16', '2023-11-26')

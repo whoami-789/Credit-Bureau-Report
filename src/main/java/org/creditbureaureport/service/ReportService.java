@@ -334,6 +334,7 @@ public class ReportService {
 
     public List<KreditDTO> getKreditsWithDetails(LocalDate startDate, LocalDate endDate) {
 
+
         // Находим кредиты за заданный период
         List<Kredit> kredits = kreditRepository.findByDatsIzmBetween(startDate, endDate);
 
@@ -674,10 +675,6 @@ public class ReportService {
                         .filter(dats -> dats.isAfter(refDate) || dats.isEqual(refDate))
                         .count());
 
-                String overduePeriod = kreditDTO.getOverdue().stream()
-                        .map(OverdueDTO::getOverduePeriod)
-                        .collect(Collectors.joining(", "));
-
 
                 if (status.equals("CA") || status.equals("CL")) outstandingPaymentNumber = 0;
                 int totalSum = (sumlspeni != null ? sumlspeni.intValue() : 0)
@@ -715,9 +712,42 @@ public class ReportService {
                     nextPaymentDate = null;
                 }
 
-                String uniqueKey = kreditDTO.getNumdog() + status;
-                boolean isUniqueOrActive = !processedEntries.contains(uniqueKey) || "AC".equals(status);
+                String zalogLs = kreditDTO.getZalogs().stream()
+                        .map(ZalogDTO::getLs)
+                        .collect(Collectors.joining());
 
+                String zalogKodCb = kreditDTO.getZalogs().stream()
+                        .map(ZalogDTO::getKodCb)
+                        .collect(Collectors.joining());
+
+                BigDecimal zalogSums = kreditDTO.getZalogs().stream()
+                        .map(ZalogDTO::getSums)
+                        .findAny().orElse(null);
+
+
+                List<OverdueDTO> overdueDTOs = kreditRepository.SpisProsrKred(kreditDTO.getNumdog(), refDate)
+                        .stream()
+                        .map(resultObject -> {
+                            Object[] resultArray = (Object[]) resultObject; // Приведение к Object[]
+                            System.out.println(Arrays.toString(resultArray));
+                            OverdueDTO overdueDTO = new OverdueDTO();
+                            overdueDTO.setPlannedPaymentDate((java.sql.Date) resultArray[1]); // Первый параметр
+                            overdueDTO.setOverdueSumm((BigDecimal) resultArray[2]); // Второй параметр
+                            overdueDTO.setOverduePeriod((String) resultArray[3]); // Третий параметр
+                            return overdueDTO;
+                        })
+                        .collect(Collectors.toList());
+
+
+                kreditDTO.setOverdue(overdueDTOs);
+
+                String overduePeriod = kreditDTO.getOverdue().stream()
+                        .map(OverdueDTO::getOverduePeriod)
+                        .collect(Collectors.joining(", "));
+
+                String uniqueKey = inputDateFormatter.format(refDate) + "_" + kreditDTO.getNumdog() + "_" + status;
+
+                boolean isUniqueOrActive = !processedEntries.contains(uniqueKey) || "AC".equals(status);
 
                 if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null)) {
                     if (isUniqueOrActive) {
@@ -770,8 +800,19 @@ public class ReportService {
                                 .append(sumsForMaxDate.intValue()) // +
                                 .append("|")
                                 .append(overduePeriod) // -
+                                .append("||||||||||")
+                                .append(kreditDTO.getProsent().intValue())
+                                .append("||||")
+                                .append(zalogLs)
                                 .append("|")
-//                            .append()
+                                .append(kreditDTO.getKod())
+                                .append("|")
+                                .append(kreditDTO.getName())
+                                .append("|")
+                                .append(zalogSums.intValue())
+                                .append("|UZS|||")
+                                .append(zalogKodCb)
+                                .append("|||||||||||||||||||||||||||||||||||||")
                                 .append("\n");
 
                         if (!"AC".equals(status)) processedEntries.add(uniqueKey);
