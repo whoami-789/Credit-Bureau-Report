@@ -333,498 +333,585 @@ public class ReportService {
     }
 
     public List<KreditDTO> getKreditsWithDetails(LocalDate startDate, LocalDate endDate) {
-
-
-        // Находим кредиты за заданный период
-        List<Kredit> kredits = kreditRepository.findByDatsIzmBetween(startDate, endDate);
-
-        System.out.println(kredits.size());
-        Map<LocalDate, String> refDates = new LinkedHashMap<>();
-        Set<String> processedEntries = new HashSet<>();
-
-
-        // Трансформируем каждый Kredit в KreditDTO
-        List<KreditDTO> kreditDTOList = kredits.stream().map(kredit -> {
-
-
-            LocalDate current = startDate;
-            while (current.isBefore(endDate) || current.equals(endDate)) {
-                LocalDate endOfMonth = current.with(TemporalAdjusters.lastDayOfMonth());
-                if (endOfMonth.isBefore(endDate) || endOfMonth.equals(endDate)) {
-                    refDates.put(endOfMonth, "END_OF_MONTH");
-                    current = endOfMonth.plusDays(1);
-                } else {
-                    // Если endDate не совпадает с концом месяца
-                    if (!endDate.equals(endOfMonth)) {
-                        refDates.put(endDate, "END_DATE");
-                    }
-                    break;
-                }
-            }
-
-            System.out.println("Обработка кредита с ID: " + kredit.getNumdog() + "\n" + kredit.getLskred() + "\n" + kredit.getLsproc() + "\n" + kredit.getLsprosrKred() + "\n" + kredit.getLsprosrProc() + "\n" + kredit.getLspeni());
-            KreditDTO kreditDTO = new KreditDTO();
-            // Заполнение данных кредита
-            kreditDTO.setNumdog(kredit.getNumdog());
-            kreditDTO.setDatadog(kredit.getDatadog());
-            kreditDTO.setProsent(kredit.getProsent());
-            kreditDTO.setSumma(kredit.getSumma());
-            kreditDTO.setDatsIzm(kredit.getDatsIzm());
-            kreditDTO.setLspeni(kredit.getLspeni());
-            kreditDTO.setLsprosrProc(kredit.getLsprosrProc());
-            kreditDTO.setLsprosrKred(kredit.getLsprosrKred());
-            kreditDTO.setStatus(kredit.getStatus());
-            kreditDTO.setDatsZakr(kredit.getDatsZakr());
-            kreditDTO.setVidKred(kredit.getVidkred());
-            kreditDTO.setKod(kredit.getKod());
-            kreditDTO.setLsKred(kredit.getLskred());
-            kreditDTO.setLsProc(kredit.getLsproc());
-            kreditDTO.setName(kredit.getAzolikFiz().getName());
-
-
-            // Получение и добавление документов
-            List<DokumentDTO> dokumentDTOs = dokRepository.findByKreditComplexConditions(
-                    kredit.getLskred(), kredit.getLsproc(), kredit.getLsprosrKred(), kredit.getLsprosrProc(), kredit.getLspeni()
-            ).stream().map(dokument -> {
-                if (dokument == null) {
-                    return null;
-                }
-                System.out.println(dokument.getLs() + "\n" + dokument.getLscor());
-                DokumentDTO dokumentDTO = new DokumentDTO();
-                // Заполнение данных документа
-                dokumentDTO.setNumdok(dokument.getNumdok());
-                dokumentDTO.setDats(dokument.getDats());
-                dokumentDTO.setSums(dokument.getSums());
-                dokumentDTO.setLs(dokument.getLs());
-                dokumentDTO.setLscor(dokument.getLscor());
-
-                return dokumentDTO;
-            }).collect(Collectors.toList());
-            kreditDTO.setDokuments(dokumentDTOs);
-
-            List<SaldoDTO> saldoDTOS = saldoRepository.findByDokumentLscor(kredit.getLskred(), kredit.getLsproc(), kredit.getLsprosrKred(), kredit.getLsprosrProc(), kredit.getLspeni()
-            ).stream().map(saldo -> {
-                if (saldo == null) {
-                    return null;
-                }
-                System.out.println(saldo.getLs());
-                SaldoDTO saldoDTO = new SaldoDTO();
-                // Заполнение данных сальдо
-                saldoDTO.setSums(saldo.getSums());
-                saldoDTO.setDats(saldo.getDats());
-                saldoDTO.setLs(saldo.getLs());
-                saldoDTO.setActivate(saldo.getActivate());
-                //...
-                return saldoDTO;
-            }).filter(Objects::nonNull).collect(Collectors.toList());
-            kreditDTO.setSaldo(saldoDTOS);
-
-            // Получение и добавление графиков погашения
-            List<GrafikDTO> grafikDTOs = kredit.getGrafiks().stream().map(grafik -> {
-                GrafikDTO grafikDTO = new GrafikDTO();
-                // Заполнение данных графика
-                grafikDTO.setDats(grafik.getDats());
-                grafikDTO.setPogKred(grafik.getPogKred());
-                grafikDTO.setMes(grafik.getMes());
-                grafikDTO.setPogKred(grafik.getPogKred());
-                grafikDTO.setPogProc(grafik.getPogProc());
-                // ...
-                return grafikDTO;
-            }).collect(Collectors.toList());
-            kreditDTO.setGrafiks(grafikDTOs);
-
-            List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream().map(zalog -> {
-                ZalogDTO zalogDTO = new ZalogDTO();
-                zalogDTO.setSums(zalog.getSums());
-                zalogDTO.setKodCb(zalog.getKodCb());
-                // Дополнительное заполнение других полей ZalogDTO
-                return zalogDTO;
-            }).collect(Collectors.toList());
-            kreditDTO.setZalogs(zalogDTOs);
-
-            // Добавление данных из ZalogXranenie
-            List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream().map(zalogXranenie -> {
-                ZalogXranenieDTO zalogXranenieDTO = new ZalogXranenieDTO();
-                zalogXranenieDTO.setData_priem(zalogXranenie.getData_priem());
-                zalogXranenieDTO.setData_vozvrat(zalogXranenie.getData_vozvrat());
-                // Дополнительное заполнение других полей ZalogXranenieDTO
-                return zalogXranenieDTO;
-            }).collect(Collectors.toList());
-            kreditDTO.setZalogXranenieList(zalogXranenieDTOs);
-            return kreditDTO;
-
-        }).filter(Objects::nonNull).collect(Collectors.toList());
-
-        SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
+        List<AzolikFiz> fizProjections = azolikFizRepository.findByMonthAndYear(startDate, endDate);
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
-        FTPSClient ftpsClient = new FTPSClient(); // Создаем FTPS клиент
-        StringBuilder dataBuilder = new StringBuilder();
+        SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
 
-        String vidKred = "";
-        String status = "";
-        String vznos = "";
-        String overdue = "";
-        int tiplred = 0;
-        LocalDate actualContractEndDate;
-        int pod = 0;
-        int principalOverduePaymentAmount = 0;
-        int interestOverduePaymentsNumber;
-        int principalOverduePaymentNumber;
-        int overduePaymentsNumber = 0;
 
-        for (KreditDTO kreditDTO : kreditDTOList) {
+        try {
+            Date currentDate = new Date();
 
-            System.out.println("Кредит: " + kreditDTO.getNumdog());
+            // Задаем маску формата даты и времени
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+            File file = new File("MKOR0001_CSDF_" + dateFormat.format(currentDate) + ".txt");
+            FileOutputStream fos = new FileOutputStream(file);
+            // Запись BOM для UTF-8 в начало файла
+            fos.write(0xEF);
+            fos.write(0xBB);
+            fos.write(0xBF);
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fos, StandardCharsets.UTF_8));
+            writer.write("HD|MKOR0001|" + "26122023" + "|1.0|1|Initial test");
+            writer.newLine();
 
-            if (kreditDTO.getVidKred() == 2) {
-                vidKred = "25";
-            } else if (kreditDTO.getVidKred() == 1) {
-                vidKred = "30";
-            } else if (kreditDTO.getVidKred() == 3) {
-                vidKred = "32";
+
+            for (AzolikFiz fizProjection : fizProjections) {
+                String genderCode = fizProjection.getFsobst() == 1 ? "M" : "F";
+                String new_address = "";
+                if (fizProjection.getLsvznos() != null) System.out.println(fizProjection.getLsvznos());
+                String address = fizProjection.getAdres();
+                if (!address.contains("шахар") && !address.contains("туман") &&
+                        !address.contains("tuman") && !address.contains("shahar")) {
+                    Optional<String> nameuOptional = azolikFizRepository.findNameuByKod(fizProjection.getKodRayon());
+                    if (nameuOptional.isPresent()) {
+                        new_address = nameuOptional.get() + " " + fizProjection.getAdres();
+                    }
+                } else {
+                    new_address = fizProjection.getAdres();
+                }
+
+                String telMobil = "";
+                String telHome = "";
+
+                if (!fizProjection.getTelmobil().replaceAll("\\s", "").isEmpty()) {
+                    telMobil = "2|" + fizProjection.getTelmobil().replaceAll("\\s", "");
+                } else {
+                    telMobil = "|";
+                }
+                if (!fizProjection.getTelhome().replaceAll("\\s", "").isEmpty()) {
+                    telHome = "|1|" + fizProjection.getTelmobil().replaceAll("\\s", "");
+                } else {
+                    telHome = "|";
+                }
+
+                writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
+                        + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
+                        + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||1|" + fizProjection.getKodPension()
+                        + ((fizProjection.getInn() != null) ? "|2|" + (fizProjection.getInn().replaceAll("\\s", "")) : "|") + "|1" + "|" +
+                        ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
+                        + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
+                        "||" + ((fizProjection.getPaspdo() != null) ? (inputDateFormatter.format(fizProjection.getPaspdo())) : "") + "|||||"
+                        + telMobil + telHome + "|||||||||||||||||||||||||||||||||||");
+                writer.newLine(); // Добавить новую строку
             }
 
-            LocalDate latestDate = kreditDTO.getGrafiks().stream()
-                    .max(Comparator.comparing(GrafikDTO::getDats))
-                    .map(GrafikDTO::getDats)
-                    .orElse(null);
+
+            // Находим кредиты за заданный период
+            List<Kredit> kredits = kreditRepository.findByDatsIzmBetween(startDate, endDate);
+
+            System.out.println(kredits.size());
+            Map<LocalDate, String> refDates = new LinkedHashMap<>();
+            Set<String> processedEntries = new HashSet<>();
 
 
-            for (Map.Entry<LocalDate, String> entry : refDates.entrySet()) {
-                LocalDate refDate = entry.getKey();
+            // Трансформируем каждый Kredit в KreditDTO
+            List<KreditDTO> kreditDTOList = kredits.stream().map(kredit -> {
 
-                LocalDate latestDocumentDateBeforeRef = kreditDTO.getDokuments().stream()
-                        .filter(d ->
-                                d.getLs().equals(kreditDTO.getLsKred()) ||
-                                        d.getLs().equals(kreditDTO.getLsProc()) ||
-                                        d.getLs().equals(kreditDTO.getLsprosrKred()) ||
-                                        d.getLs().equals(kreditDTO.getLsprosrProc()) ||
-                                        d.getLs().equals(kreditDTO.getLspeni())
-                        )
-                        .filter(d ->
-                                d.getLscor().startsWith("10101") ||
-                                        d.getLscor().startsWith("10503") ||
-                                        d.getLscor().startsWith("10509")
-                        )
-                        .map(DokumentDTO::getDats)
-                        .filter(d -> d != null && (d.isEqual(refDate) || d.isBefore(refDate)))
-                        .max(Comparator.naturalOrder())
-                        .orElse(null);
 
-                Integer countedGrafik = Math.toIntExact(kreditDTO.getGrafiks().stream()
-                        .map(GrafikDTO::getDats)
-                        .count());
-
-                if (kreditDTO.getDatsZakr() == null || kreditDTO.getDatsZakr().isAfter(refDate)) {
-                    actualContractEndDate = null;
-                } else {
-                    actualContractEndDate = kreditDTO.getDatsZakr();
+                LocalDate current = startDate;
+                while (current.isBefore(endDate) || current.equals(endDate)) {
+                    LocalDate endOfMonth = current.with(TemporalAdjusters.lastDayOfMonth());
+                    if (endOfMonth.isBefore(endDate) || endOfMonth.equals(endDate)) {
+                        refDates.put(endOfMonth, "END_OF_MONTH");
+                        current = endOfMonth.plusDays(1);
+                    } else {
+                        // Если endDate не совпадает с концом месяца
+                        if (!endDate.equals(endOfMonth)) {
+                            refDates.put(endDate, "END_DATE");
+                        }
+                        break;
+                    }
                 }
 
-                if (kreditDTO.getDatsZakr() == null || kreditDTO.getDatsZakr().isAfter(refDate)) {
-                    status = "AC";
-                } else if (latestDate != null && latestDate.isAfter(kreditDTO.getDatsZakr())) {
-                    status = "CA";
-                } else {
-                    status = "CL";
+                System.out.println("Обработка кредита с ID: " + kredit.getNumdog() + "\n" + kredit.getLskred() + "\n" + kredit.getLsproc() + "\n" + kredit.getLsprosrKred() + "\n" + kredit.getLsprosrProc() + "\n" + kredit.getLspeni());
+                KreditDTO kreditDTO = new KreditDTO();
+                // Заполнение данных кредита
+                kreditDTO.setNumdog(kredit.getNumdog());
+                kreditDTO.setDatadog(kredit.getDatadog());
+                kreditDTO.setProsent(kredit.getProsent());
+                kreditDTO.setSumma(kredit.getSumma());
+                kreditDTO.setDatsIzm(kredit.getDatsIzm());
+                kreditDTO.setLspeni(kredit.getLspeni());
+                kreditDTO.setLsprosrProc(kredit.getLsprosrProc());
+                kreditDTO.setLsprosrKred(kredit.getLsprosrKred());
+                kreditDTO.setStatus(kredit.getStatus());
+                kreditDTO.setDatsZakr(kredit.getDatsZakr());
+                kreditDTO.setVidKred(kredit.getVidkred());
+                kreditDTO.setKod(kredit.getKod());
+                kreditDTO.setLsKred(kredit.getLskred());
+                kreditDTO.setLsProc(kredit.getLsproc());
+                kreditDTO.setName(kredit.getAzolikFiz().getName());
+
+
+                // Получение и добавление документов
+                List<DokumentDTO> dokumentDTOs = dokRepository.findByKreditComplexConditions(
+                        kredit.getLskred(), kredit.getLsproc(), kredit.getLsprosrKred(), kredit.getLsprosrProc(), kredit.getLspeni()
+                ).stream().map(dokument -> {
+                    if (dokument == null) {
+                        return null;
+                    }
+                    System.out.println(dokument.getLs() + "\n" + dokument.getLscor());
+                    DokumentDTO dokumentDTO = new DokumentDTO();
+                    // Заполнение данных документа
+                    dokumentDTO.setNumdok(dokument.getNumdok());
+                    dokumentDTO.setDats(dokument.getDats());
+                    dokumentDTO.setSums(dokument.getSums());
+                    dokumentDTO.setLs(dokument.getLs());
+                    dokumentDTO.setLscor(dokument.getLscor());
+
+                    return dokumentDTO;
+                }).collect(Collectors.toList());
+                kreditDTO.setDokuments(dokumentDTOs);
+
+                List<SaldoDTO> saldoDTOS = saldoRepository.findByDokumentLscor(kredit.getLskred(), kredit.getLsproc(), kredit.getLsprosrKred(), kredit.getLsprosrProc(), kredit.getLspeni()
+                ).stream().map(saldo -> {
+                    if (saldo == null) {
+                        return null;
+                    }
+                    System.out.println(saldo.getLs());
+                    SaldoDTO saldoDTO = new SaldoDTO();
+                    // Заполнение данных сальдо
+                    saldoDTO.setSums(saldo.getSums());
+                    saldoDTO.setDats(saldo.getDats());
+                    saldoDTO.setLs(saldo.getLs());
+                    saldoDTO.setActivate(saldo.getActivate());
+                    //...
+                    return saldoDTO;
+                }).filter(Objects::nonNull).collect(Collectors.toList());
+                kreditDTO.setSaldo(saldoDTOS);
+
+                // Получение и добавление графиков погашения
+                List<GrafikDTO> grafikDTOs = kredit.getGrafiks().stream().map(grafik -> {
+                    GrafikDTO grafikDTO = new GrafikDTO();
+                    // Заполнение данных графика
+                    grafikDTO.setDats(grafik.getDats());
+                    grafikDTO.setPogKred(grafik.getPogKred());
+                    grafikDTO.setMes(grafik.getMes());
+                    grafikDTO.setPogKred(grafik.getPogKred());
+                    grafikDTO.setPogProc(grafik.getPogProc());
+                    // ...
+                    return grafikDTO;
+                }).collect(Collectors.toList());
+                kreditDTO.setGrafiks(grafikDTOs);
+
+                List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream().map(zalog -> {
+                    ZalogDTO zalogDTO = new ZalogDTO();
+                    zalogDTO.setSums(zalog.getSums());
+                    zalogDTO.setKodCb(zalog.getKodCb());
+                    // Дополнительное заполнение других полей ZalogDTO
+                    return zalogDTO;
+                }).collect(Collectors.toList());
+                kreditDTO.setZalogs(zalogDTOs);
+
+                // Добавление данных из ZalogXranenie
+                List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream().map(zalogXranenie -> {
+                    ZalogXranenieDTO zalogXranenieDTO = new ZalogXranenieDTO();
+                    zalogXranenieDTO.setData_priem(zalogXranenie.getData_priem());
+                    zalogXranenieDTO.setData_vozvrat(zalogXranenie.getData_vozvrat());
+                    // Дополнительное заполнение других полей ZalogXranenieDTO
+                    return zalogXranenieDTO;
+                }).collect(Collectors.toList());
+                kreditDTO.setZalogXranenieList(zalogXranenieDTOs);
+                return kreditDTO;
+
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+
+            StringBuilder dataBuilder = new StringBuilder();
+
+            String vidKred = "";
+            String status = "";
+            String vznos = "";
+            String overdue = "";
+            int tiplred = 0;
+            LocalDate actualContractEndDate;
+            int pod = 0;
+            int principalOverduePaymentAmount = 0;
+            int interestOverduePaymentsNumber;
+            int principalOverduePaymentNumber;
+            int overduePaymentsNumber = 0;
+            int n = 0;
+
+
+            for (KreditDTO kreditDTO : kreditDTOList) {
+
+                System.out.println("Кредит: " + kreditDTO.getNumdog());
+
+                if (kreditDTO.getVidKred() == 2) {
+                    vidKred = "25";
+                } else if (kreditDTO.getVidKred() == 1) {
+                    vidKred = "30";
+                } else if (kreditDTO.getVidKred() == 3) {
+                    vidKred = "32";
                 }
 
-                BigDecimal grafikPogKred = kreditDTO.getGrafiks().stream()
-                        .filter(g -> !g.getDats().isAfter(refDate))
-                        .map(GrafikDTO::getPogKred)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                BigDecimal dokSums = kreditDTO.getDokuments().stream()
-                        .filter(d -> d.getLs().equals(kreditDTO.getLsKred()) || d.getLs().equals(kreditDTO.getLsprosrKred()))
-                        .filter(d -> d.getLscor().startsWith("10101")
-                                || d.getLscor().startsWith("10503")
-                                || d.getLscor().startsWith("10509"))
-                        .map(DokumentDTO::getSums)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-
-                BigDecimal saldoSumsLsKred = kreditDTO.getSaldo().stream()
-                        .filter(s -> s.getLs().equals(kreditDTO.getLsKred()) && !s.getDats().isAfter(refDate))
-                        .max(Comparator.comparing(SaldoDTO::getDats))
-                        .map(SaldoDTO::getSums)
-                        .orElse(BigDecimal.ZERO);
-
-                BigDecimal saldoSumsLsProc = kreditDTO.getSaldo().stream()
-                        .filter(s -> s.getLs().equals(kreditDTO.getLsProc()) && !s.getDats().isAfter(refDate))
-                        .max(Comparator.comparing(SaldoDTO::getDats))
-                        .map(SaldoDTO::getSums)
-                        .orElse(BigDecimal.ZERO);
-
-                BigDecimal saldoSumsLsprosrKred = kreditDTO.getSaldo().stream()
-                        .filter(s -> s.getLs().equals(kreditDTO.getLsprosrKred()) && !s.getDats().isAfter(refDate))
-                        .max(Comparator.comparing(SaldoDTO::getDats))
-                        .map(SaldoDTO::getSums)
-                        .orElse(BigDecimal.ZERO);
-
-                BigDecimal saldoSumsLsPeni = kreditDTO.getSaldo().stream()
-                        .filter(s -> s.getLs().equals(kreditDTO.getLspeni()) && !s.getDats().isAfter(refDate))
-                        .max(Comparator.comparing(SaldoDTO::getDats))
-                        .map(SaldoDTO::getSums)
-                        .orElse(BigDecimal.ZERO);
-
-                if (grafikPogKred.intValue() - dokSums.intValue() > 0) {
-                    principalOverduePaymentAmount = grafikPogKred.intValue() - dokSums.intValue();
-                } else if (grafikPogKred.intValue() - dokSums.intValue() < 0) {
-                    principalOverduePaymentAmount = 0;
-                }
-
-
-                int outstandingBalance = (saldoSumsLsKred.intValue() + saldoSumsLsProc.intValue()
-                        + (saldoSumsLsprosrKred != null ? saldoSumsLsprosrKred.intValue() : 0)
-                        + (saldoSumsLsPeni != null ? saldoSumsLsPeni.intValue() : 0)) - principalOverduePaymentAmount;
-
-                BigDecimal pogKredForMaxDate = kreditDTO.getGrafiks().stream()
-                        .filter(g -> !g.getDats().isAfter(refDate)) // фильтрация записей до и включая reference_date
-                        .max(Comparator.comparing(GrafikDTO::getDats)) // поиск максимальной даты
-                        .map(GrafikDTO::getPogKred) // извлечение значения pog_kred
-                        .orElse(BigDecimal.ZERO); // если нет подходящих записей, возвращаем 0
-
-
-                Integer dokDatsLsLscor = Math.toIntExact(kreditDTO.getDokuments().stream()
-                        .filter(d -> d.getDats().isEqual(refDate))
-                        .filter(d -> d.getLs().equals(kreditDTO.getLsProc()) && d.getLscor().equals(kreditDTO.getLsprosrProc()))
-                        .map(DokumentDTO::getDats)
-                        .count());
-
-                Integer dokDatsLsLscorStartsWith = Math.toIntExact(kreditDTO.getDokuments().stream()
-                        .filter(d -> d.getDats().isEqual(refDate))
-                        .filter(d -> d.getLs().equals(kreditDTO.getLsprosrProc())
-                                && (d.getLscor().startsWith("10101")
-                                || d.getLscor().startsWith("10503")
-                                || d.getLscor().startsWith("10509")))
-                        .map(DokumentDTO::getDats)
-                        .count());
-
-                BigDecimal sumsForMaxDate = kreditDTO.getSaldo().stream()
-                        .filter(s -> s.getLs().equals(kreditDTO.getLsprosrProc()) && !s.getDats().isAfter(refDate)) // фильтрация записей
-                        .max(Comparator.comparing(SaldoDTO::getDats)) // поиск максимальной даты
-                        .map(SaldoDTO::getSums) // извлечение значения sums
-                        .orElse(BigDecimal.ZERO); // если нет подходящих записей, возвращаем 0
-
-                if (dokDatsLsLscor - dokDatsLsLscorStartsWith <= 0 && sumsForMaxDate.intValue() > 0) {
-                    interestOverduePaymentsNumber = 1;
-                } else if (dokDatsLsLscor - dokDatsLsLscorStartsWith > 0) {
-                    interestOverduePaymentsNumber = dokDatsLsLscor - dokDatsLsLscorStartsWith;
-                } else {
-                    interestOverduePaymentsNumber = 0;
-                }
-
-
-                if (pogKredForMaxDate.intValue() == 0) {
-                    principalOverduePaymentNumber = 0;
-                } else principalOverduePaymentNumber = principalOverduePaymentAmount / pogKredForMaxDate.intValue();
-
-
-                if (principalOverduePaymentNumber > interestOverduePaymentsNumber) {
-                    overduePaymentsNumber = principalOverduePaymentNumber;
-                } else if (principalOverduePaymentNumber < interestOverduePaymentsNumber) {
-                    overduePaymentsNumber = interestOverduePaymentsNumber;
-                } else if (principalOverduePaymentNumber == interestOverduePaymentsNumber) {
-                    overduePaymentsNumber = principalOverduePaymentNumber;
-                } else if (principalOverduePaymentNumber == 0 && interestOverduePaymentsNumber == 0) {
-                    overduePaymentsNumber = 0;
-                }
-
-                SaldoDTO latestSaldoLsKred = kreditDTO.getSaldo().stream()
-                        .filter(s -> s.getLs().equals(kreditDTO.getLsKred()))
-                        .filter(s -> s.getDats().isBefore(refDate) || s.getDats().isEqual(refDate))
-                        .max(Comparator.comparing(SaldoDTO::getDats))
-                        .orElse(null);
-                BigDecimal sumlsKred = latestSaldoLsKred != null ? latestSaldoLsKred.getSums() : null;
-
-
-                SaldoDTO latestSaldoLsProc = kreditDTO.getSaldo().stream()
-                        .filter(s -> s.getLs().equals(kreditDTO.getLsProc()))
-                        .filter(s -> s.getDats().isBefore(refDate) || s.getDats().isEqual(refDate))
-                        .max(Comparator.comparing(SaldoDTO::getDats))
-                        .orElse(null);
-                BigDecimal sumlsProc = latestSaldoLsProc != null ? latestSaldoLsProc.getSums() : null;
-
-
-                SaldoDTO latestSaldoLsProsrKred = kreditDTO.getSaldo().stream()
-                        .filter(s -> s.getLs().equals(kreditDTO.getLsprosrKred()))
-                        .filter(s -> s.getDats().isBefore(refDate) || s.getDats().isEqual(refDate))
-                        .max(Comparator.comparing(SaldoDTO::getDats))
-                        .orElse(null);
-                BigDecimal sumlsprosrKred = latestSaldoLsProsrKred != null ? latestSaldoLsProsrKred.getSums() : null;
-
-
-                SaldoDTO latestSaldoLsProsrProc = kreditDTO.getSaldo().stream()
-                        .filter(s -> s.getLs().equals(kreditDTO.getLsprosrProc()))
-                        .filter(s -> s.getDats().isBefore(refDate) || s.getDats().isEqual(refDate))
-                        .max(Comparator.comparing(SaldoDTO::getDats))
-                        .orElse(null);
-                BigDecimal sumlsprosrProc = latestSaldoLsProsrProc != null ? latestSaldoLsProsrProc.getSums() : null;
-
-
-                SaldoDTO latestSaldoLsPeni = kreditDTO.getSaldo().stream()
-                        .filter(s -> s.getLs().equals(kreditDTO.getLspeni()))
-                        .filter(s -> s.getDats().isBefore(refDate) || s.getDats().isEqual(refDate))
-                        .max(Comparator.comparing(SaldoDTO::getDats))
-                        .orElse(null);
-                BigDecimal sumlspeni = latestSaldoLsPeni != null ? latestSaldoLsPeni.getSums() : null;
-
-
-                int outstandingPaymentNumber = Math.toIntExact(kreditDTO.getGrafiks().stream()
-                        .map(GrafikDTO::getDats)
-                        .filter(dats -> dats.isAfter(refDate) || dats.isEqual(refDate))
-                        .count());
-
-
-                if (status.equals("CA") || status.equals("CL")) outstandingPaymentNumber = 0;
-                int totalSum = (sumlspeni != null ? sumlspeni.intValue() : 0)
-                        + (sumlsProc != null ? sumlsProc.intValue() : 0)
-                        + (sumlsKred != null ? sumlsKred.intValue() : 0)
-                        + (sumlsprosrProc != null ? sumlsprosrProc.intValue() : 0)
-                        + (sumlsprosrKred != null ? sumlsprosrKred.intValue() : 0);
-
-                if (outstandingPaymentNumber > 0) {
-                    pod = totalSum / outstandingPaymentNumber;
-                } else {
-                    pod = totalSum;
-                }
-
-                LocalDate firstPaymentDate = kreditDTO.getGrafiks().stream()
-                        .min(Comparator.comparing(GrafikDTO::getDats))
+                LocalDate latestDate = kreditDTO.getGrafiks().stream()
+                        .max(Comparator.comparing(GrafikDTO::getDats))
                         .map(GrafikDTO::getDats)
                         .orElse(null);
 
-                LocalDate nextPaymentDate = kreditDTO.getGrafiks().stream()
-                        .filter(g -> g.getDats().isEqual(refDate) || g.getDats().isAfter(refDate))
-                        .min(Comparator.comparing(GrafikDTO::getDats))
-                        .map(GrafikDTO::getDats)
-                        .orElse(null);
 
-                if (nextPaymentDate == null) {
-                    nextPaymentDate = null;
-                } else if (kreditDTO.getDatsZakr() == null) {
-                    nextPaymentDate = kreditDTO.getGrafiks().stream()
+                for (Map.Entry<LocalDate, String> entry : refDates.entrySet()) {
+                    LocalDate refDate = entry.getKey();
+
+                    LocalDate latestDocumentDateBeforeRef = kreditDTO.getDokuments().stream()
+                            .filter(d ->
+                                    d.getLs().equals(kreditDTO.getLsKred()) ||
+                                            d.getLs().equals(kreditDTO.getLsProc()) ||
+                                            d.getLs().equals(kreditDTO.getLsprosrKred()) ||
+                                            d.getLs().equals(kreditDTO.getLsprosrProc()) ||
+                                            d.getLs().equals(kreditDTO.getLspeni())
+                            )
+                            .filter(d ->
+                                    d.getLscor().startsWith("10101") ||
+                                            d.getLscor().startsWith("10503") ||
+                                            d.getLscor().startsWith("10509")
+                            )
+                            .map(DokumentDTO::getDats)
+                            .filter(d -> d != null && (d.isEqual(refDate) || d.isBefore(refDate)))
+                            .max(Comparator.naturalOrder())
+                            .orElse(null);
+
+                    Integer countedGrafik = Math.toIntExact(kreditDTO.getGrafiks().stream()
+                            .map(GrafikDTO::getDats)
+                            .count());
+
+                    if (kreditDTO.getDatsZakr() == null || kreditDTO.getDatsZakr().isAfter(refDate)) {
+                        actualContractEndDate = null;
+                    } else {
+                        actualContractEndDate = kreditDTO.getDatsZakr();
+                    }
+
+                    if (kreditDTO.getDatsZakr() == null || kreditDTO.getDatsZakr().isAfter(refDate)) {
+                        status = "AC";
+                    } else if (latestDate != null && latestDate.isAfter(kreditDTO.getDatsZakr())) {
+                        status = "CA";
+                    } else {
+                        status = "CL";
+                    }
+
+                    BigDecimal grafikPogKred = kreditDTO.getGrafiks().stream()
+                            .filter(g -> !g.getDats().isAfter(refDate))
+                            .map(GrafikDTO::getPogKred)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    BigDecimal dokSums = kreditDTO.getDokuments().stream()
+                            .filter(d -> d.getLs().equals(kreditDTO.getLsKred()) || d.getLs().equals(kreditDTO.getLsprosrKred()))
+                            .filter(d -> d.getLscor().startsWith("10101")
+                                    || d.getLscor().startsWith("10503")
+                                    || d.getLscor().startsWith("10509"))
+                            .map(DokumentDTO::getSums)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+
+                    BigDecimal saldoSumsLsKred = kreditDTO.getSaldo().stream()
+                            .filter(s -> s.getLs().equals(kreditDTO.getLsKred()) && !s.getDats().isAfter(refDate))
+                            .max(Comparator.comparing(SaldoDTO::getDats))
+                            .map(SaldoDTO::getSums)
+                            .orElse(BigDecimal.ZERO);
+
+                    BigDecimal saldoSumsLsProc = kreditDTO.getSaldo().stream()
+                            .filter(s -> s.getLs().equals(kreditDTO.getLsProc()) && !s.getDats().isAfter(refDate))
+                            .max(Comparator.comparing(SaldoDTO::getDats))
+                            .map(SaldoDTO::getSums)
+                            .orElse(BigDecimal.ZERO);
+
+                    BigDecimal saldoSumsLsprosrKred = kreditDTO.getSaldo().stream()
+                            .filter(s -> s.getLs().equals(kreditDTO.getLsprosrKred()) && !s.getDats().isAfter(refDate))
+                            .max(Comparator.comparing(SaldoDTO::getDats))
+                            .map(SaldoDTO::getSums)
+                            .orElse(BigDecimal.ZERO);
+
+                    BigDecimal saldoSumsLsPeni = kreditDTO.getSaldo().stream()
+                            .filter(s -> s.getLs().equals(kreditDTO.getLspeni()) && !s.getDats().isAfter(refDate))
+                            .max(Comparator.comparing(SaldoDTO::getDats))
+                            .map(SaldoDTO::getSums)
+                            .orElse(BigDecimal.ZERO);
+
+                    if (grafikPogKred.intValue() - dokSums.intValue() > 0) {
+                        principalOverduePaymentAmount = grafikPogKred.intValue() - dokSums.intValue();
+                    } else if (grafikPogKred.intValue() - dokSums.intValue() < 0) {
+                        principalOverduePaymentAmount = 0;
+                    }
+
+
+                    int outstandingBalance = (saldoSumsLsKred.intValue() + saldoSumsLsProc.intValue()
+                            + (saldoSumsLsprosrKred != null ? saldoSumsLsprosrKred.intValue() : 0)
+                            + (saldoSumsLsPeni != null ? saldoSumsLsPeni.intValue() : 0)) - principalOverduePaymentAmount;
+
+                    BigDecimal pogKredForMaxDate = kreditDTO.getGrafiks().stream()
+                            .filter(g -> !g.getDats().isAfter(refDate)) // фильтрация записей до и включая reference_date
+                            .max(Comparator.comparing(GrafikDTO::getDats)) // поиск максимальной даты
+                            .map(GrafikDTO::getPogKred) // извлечение значения pog_kred
+                            .orElse(BigDecimal.ZERO); // если нет подходящих записей, возвращаем 0
+
+
+                    Integer dokDatsLsLscor = Math.toIntExact(kreditDTO.getDokuments().stream()
+                            .filter(d -> d.getDats().isEqual(refDate))
+                            .filter(d -> d.getLs().equals(kreditDTO.getLsProc()) && d.getLscor().equals(kreditDTO.getLsprosrProc()))
+                            .map(DokumentDTO::getDats)
+                            .count());
+
+                    Integer dokDatsLsLscorStartsWith = Math.toIntExact(kreditDTO.getDokuments().stream()
+                            .filter(d -> d.getDats().isEqual(refDate))
+                            .filter(d -> d.getLs().equals(kreditDTO.getLsprosrProc())
+                                    && (d.getLscor().startsWith("10101")
+                                    || d.getLscor().startsWith("10503")
+                                    || d.getLscor().startsWith("10509")))
+                            .map(DokumentDTO::getDats)
+                            .count());
+
+                    BigDecimal sumsForMaxDate = kreditDTO.getSaldo().stream()
+                            .filter(s -> s.getLs().equals(kreditDTO.getLsprosrProc()) && !s.getDats().isAfter(refDate)) // фильтрация записей
+                            .max(Comparator.comparing(SaldoDTO::getDats)) // поиск максимальной даты
+                            .map(SaldoDTO::getSums) // извлечение значения sums
+                            .orElse(BigDecimal.ZERO); // если нет подходящих записей, возвращаем 0
+
+                    if (dokDatsLsLscor - dokDatsLsLscorStartsWith <= 0 && sumsForMaxDate.intValue() > 0) {
+                        interestOverduePaymentsNumber = 1;
+                    } else if (dokDatsLsLscor - dokDatsLsLscorStartsWith > 0) {
+                        interestOverduePaymentsNumber = dokDatsLsLscor - dokDatsLsLscorStartsWith;
+                    } else {
+                        interestOverduePaymentsNumber = 0;
+                    }
+
+
+                    if (pogKredForMaxDate.intValue() == 0) {
+                        principalOverduePaymentNumber = 0;
+                    } else principalOverduePaymentNumber = principalOverduePaymentAmount / pogKredForMaxDate.intValue();
+
+
+                    if (principalOverduePaymentNumber > interestOverduePaymentsNumber) {
+                        overduePaymentsNumber = principalOverduePaymentNumber;
+                    } else if (principalOverduePaymentNumber < interestOverduePaymentsNumber) {
+                        overduePaymentsNumber = interestOverduePaymentsNumber;
+                    } else if (principalOverduePaymentNumber == interestOverduePaymentsNumber) {
+                        overduePaymentsNumber = principalOverduePaymentNumber;
+                    } else if (principalOverduePaymentNumber == 0 && interestOverduePaymentsNumber == 0) {
+                        overduePaymentsNumber = 0;
+                    }
+
+                    SaldoDTO latestSaldoLsKred = kreditDTO.getSaldo().stream()
+                            .filter(s -> s.getLs().equals(kreditDTO.getLsKred()))
+                            .filter(s -> s.getDats().isBefore(refDate) || s.getDats().isEqual(refDate))
+                            .max(Comparator.comparing(SaldoDTO::getDats))
+                            .orElse(null);
+                    BigDecimal sumlsKred = latestSaldoLsKred != null ? latestSaldoLsKred.getSums() : null;
+
+
+                    SaldoDTO latestSaldoLsProc = kreditDTO.getSaldo().stream()
+                            .filter(s -> s.getLs().equals(kreditDTO.getLsProc()))
+                            .filter(s -> s.getDats().isBefore(refDate) || s.getDats().isEqual(refDate))
+                            .max(Comparator.comparing(SaldoDTO::getDats))
+                            .orElse(null);
+                    BigDecimal sumlsProc = latestSaldoLsProc != null ? latestSaldoLsProc.getSums() : null;
+
+
+                    SaldoDTO latestSaldoLsProsrKred = kreditDTO.getSaldo().stream()
+                            .filter(s -> s.getLs().equals(kreditDTO.getLsprosrKred()))
+                            .filter(s -> s.getDats().isBefore(refDate) || s.getDats().isEqual(refDate))
+                            .max(Comparator.comparing(SaldoDTO::getDats))
+                            .orElse(null);
+                    BigDecimal sumlsprosrKred = latestSaldoLsProsrKred != null ? latestSaldoLsProsrKred.getSums() : null;
+
+
+                    SaldoDTO latestSaldoLsProsrProc = kreditDTO.getSaldo().stream()
+                            .filter(s -> s.getLs().equals(kreditDTO.getLsprosrProc()))
+                            .filter(s -> s.getDats().isBefore(refDate) || s.getDats().isEqual(refDate))
+                            .max(Comparator.comparing(SaldoDTO::getDats))
+                            .orElse(null);
+                    BigDecimal sumlsprosrProc = latestSaldoLsProsrProc != null ? latestSaldoLsProsrProc.getSums() : null;
+
+
+                    SaldoDTO latestSaldoLsPeni = kreditDTO.getSaldo().stream()
+                            .filter(s -> s.getLs().equals(kreditDTO.getLspeni()))
+                            .filter(s -> s.getDats().isBefore(refDate) || s.getDats().isEqual(refDate))
+                            .max(Comparator.comparing(SaldoDTO::getDats))
+                            .orElse(null);
+                    BigDecimal sumlspeni = latestSaldoLsPeni != null ? latestSaldoLsPeni.getSums() : null;
+
+
+                    int outstandingPaymentNumber = Math.toIntExact(kreditDTO.getGrafiks().stream()
+                            .map(GrafikDTO::getDats)
+                            .filter(dats -> dats.isAfter(refDate) || dats.isEqual(refDate))
+                            .count());
+
+
+                    if (status.equals("CA") || status.equals("CL")) outstandingPaymentNumber = 0;
+                    int totalSum = (sumlspeni != null ? sumlspeni.intValue() : 0)
+                            + (sumlsProc != null ? sumlsProc.intValue() : 0)
+                            + (sumlsKred != null ? sumlsKred.intValue() : 0)
+                            + (sumlsprosrProc != null ? sumlsprosrProc.intValue() : 0)
+                            + (sumlsprosrKred != null ? sumlsprosrKred.intValue() : 0);
+
+                    if (outstandingPaymentNumber > 0) {
+                        pod = totalSum / outstandingPaymentNumber;
+                    } else {
+                        pod = totalSum;
+                    }
+
+                    LocalDate firstPaymentDate = kreditDTO.getGrafiks().stream()
+                            .min(Comparator.comparing(GrafikDTO::getDats))
+                            .map(GrafikDTO::getDats)
+                            .orElse(null);
+
+                    LocalDate nextPaymentDate = kreditDTO.getGrafiks().stream()
                             .filter(g -> g.getDats().isEqual(refDate) || g.getDats().isAfter(refDate))
                             .min(Comparator.comparing(GrafikDTO::getDats))
                             .map(GrafikDTO::getDats)
                             .orElse(null);
-                } else if (status.equals("CA") || status.equals("CL")) {
-                    nextPaymentDate = null;
-                }
 
-                String zalogLs = kreditDTO.getZalogs().stream()
-                        .map(ZalogDTO::getLs)
-                        .collect(Collectors.joining());
+                    if (nextPaymentDate == null) {
+                        nextPaymentDate = null;
+                    } else if (kreditDTO.getDatsZakr() == null) {
+                        nextPaymentDate = kreditDTO.getGrafiks().stream()
+                                .filter(g -> g.getDats().isEqual(refDate) || g.getDats().isAfter(refDate))
+                                .min(Comparator.comparing(GrafikDTO::getDats))
+                                .map(GrafikDTO::getDats)
+                                .orElse(null);
+                    } else if (status.equals("CA") || status.equals("CL")) {
+                        nextPaymentDate = null;
+                    }
 
-                String zalogKodCb = kreditDTO.getZalogs().stream()
-                        .map(ZalogDTO::getKodCb)
-                        .collect(Collectors.joining());
+                    String zalogLs = kreditDTO.getZalogs().stream()
+                            .map(ZalogDTO::getLs)
+                            .collect(Collectors.joining());
 
-                BigDecimal zalogSums = kreditDTO.getZalogs().stream()
-                        .map(ZalogDTO::getSums)
-                        .findAny().orElse(null);
+                    String zalogKodCb = kreditDTO.getZalogs().stream()
+                            .map(ZalogDTO::getKodCb)
+                            .collect(Collectors.joining());
 
-
-                List<OverdueDTO> overdueDTOs = kreditRepository.SpisProsrKred(kreditDTO.getNumdog(), refDate)
-                        .stream()
-                        .map(resultObject -> {
-                            Object[] resultArray = (Object[]) resultObject; // Приведение к Object[]
-                            System.out.println(Arrays.toString(resultArray));
-                            OverdueDTO overdueDTO = new OverdueDTO();
-                            overdueDTO.setPlannedPaymentDate((java.sql.Date) resultArray[1]); // Первый параметр
-                            overdueDTO.setOverdueSumm((BigDecimal) resultArray[2]); // Второй параметр
-                            overdueDTO.setOverduePeriod((String) resultArray[3]); // Третий параметр
-                            return overdueDTO;
-                        })
-                        .collect(Collectors.toList());
+                    BigDecimal zalogSums = kreditDTO.getZalogs().stream()
+                            .map(ZalogDTO::getSums)
+                            .findAny().orElse(null);
 
 
-                kreditDTO.setOverdue(overdueDTOs);
+                    List<OverdueDTO> overdueDTOs = kreditRepository.SpisProsrKred(kreditDTO.getNumdog(), refDate)
+                            .stream()
+                            .map(resultObject -> {
+                                Object[] resultArray = (Object[]) resultObject; // Приведение к Object[]
+                                System.out.println(Arrays.toString(resultArray));
+                                OverdueDTO overdueDTO = new OverdueDTO();
+                                overdueDTO.setPlannedPaymentDate((java.sql.Date) resultArray[1]); // Первый параметр
+                                overdueDTO.setOverdueSumm((BigDecimal) resultArray[2]); // Второй параметр
+                                overdueDTO.setOverduePeriod((String) resultArray[3]); // Третий параметр
+                                return overdueDTO;
+                            })
+                            .collect(Collectors.toList());
 
-                String overduePeriod = kreditDTO.getOverdue().stream()
-                        .map(OverdueDTO::getOverduePeriod)
-                        .collect(Collectors.joining(", "));
 
-                String uniqueKey = inputDateFormatter.format(refDate) + "_" + kreditDTO.getNumdog() + "_" + status;
+                    kreditDTO.setOverdue(overdueDTOs);
 
-                boolean isUniqueOrActive = !processedEntries.contains(uniqueKey) || "AC".equals(status);
+                    String overduePeriod = kreditDTO.getOverdue().stream()
+                            .map(OverdueDTO::getOverduePeriod)
+                            .collect(Collectors.joining(", "));
 
-                if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null)) {
-                    if (isUniqueOrActive) {
-                        dataBuilder.append("CI|MKOR0001||")
-                                .append(inputDateFormatter.format(refDate))
-                                .append("|")
-                                .append(kreditDTO.getKod())
-                                .append("|B|")
-                                .append(kreditDTO.getNumdog().replaceAll("\\s", ""))
-                                .append("|")
-                                .append(vidKred)
-                                .append("|")
-                                .append(status)
-                                .append("||UZS|UZS|")
-                                .append(inputDateFormatter.format(kreditDTO.getDatadog()))
-                                .append("|")
-                                .append(inputDateFormatter.format(kreditDTO.getDatadog()))
-                                .append("|")
-                                .append(inputDateFormatter.format(latestDate))
-                                .append("|")
-                                .append(actualContractEndDate != null ? inputDateFormatter.format(actualContractEndDate) : "")
-                                .append("|")
-                                .append(latestDocumentDateBeforeRef != null ? inputDateFormatter.format(latestDocumentDateBeforeRef) : "")
-                                .append("||")
-                                .append(kreditDTO.getSumma().intValue())
-                                .append("|")
-                                .append(countedGrafik)
-                                .append("|M|MXD|")
-                                .append(pod) // +
-                                .append("|")
-                                .append(inputDateFormatter.format(firstPaymentDate)) // +
-                                .append("|")
-                                .append((nextPaymentDate != null) ? inputDateFormatter.format(nextPaymentDate) : "") // +
-                                .append("||")
-                                .append(outstandingPaymentNumber) // +
-                                .append("|")
-                                ////////////////////////////////
-                                .append(outstandingBalance) // +
-                                .append("|")
-                                .append(overduePaymentsNumber) // +
-                                .append("|")
-                                .append(principalOverduePaymentNumber) // +
-                                .append("|")
-                                .append(interestOverduePaymentsNumber) // +
-                                .append("|")
-                                .append(principalOverduePaymentAmount + sumsForMaxDate.intValue()) // +
-                                .append("|")
-                                .append(principalOverduePaymentAmount)// +
-                                .append("|")
-                                .append(sumsForMaxDate.intValue()) // +
-                                .append("|")
-                                .append(overduePeriod) // -
-                                .append("||||||||||")
-                                .append(kreditDTO.getProsent().intValue())
-                                .append("||||")
-                                .append(zalogLs)
-                                .append("|")
-                                .append(kreditDTO.getKod())
-                                .append("|")
-                                .append(kreditDTO.getName())
-                                .append("|")
-                                .append(zalogSums.intValue())
-                                .append("|UZS|||")
-                                .append(zalogKodCb)
-                                .append("|||||||||||||||||||||||||||||||||||||")
-                                .append("\n");
 
-                        if (!"AC".equals(status)) processedEntries.add(uniqueKey);
+                    String uniqueKey = inputDateFormatter.format(refDate) + "_" + kreditDTO.getNumdog() + "_" + status;
+
+                    boolean isUniqueOrActive = !processedEntries.contains(uniqueKey) || "AC".equals(status);
+
+                    if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null)) {
+                        if (isUniqueOrActive) {
+                            dataBuilder.append("CI|MKOR0001||")
+                                    .append(inputDateFormatter.format(refDate))
+                                    .append("|")
+                                    .append(kreditDTO.getKod())
+                                    .append("|B|")
+                                    .append(kreditDTO.getNumdog().replaceAll("\\s", ""))
+                                    .append("|")
+                                    .append(vidKred)
+                                    .append("|")
+                                    .append(status)
+                                    .append("||UZS|UZS|")
+                                    .append(inputDateFormatter.format(kreditDTO.getDatadog()))
+                                    .append("|")
+                                    .append(inputDateFormatter.format(kreditDTO.getDatadog()))
+                                    .append("|")
+                                    .append(inputDateFormatter.format(latestDate))
+                                    .append("|")
+                                    .append(actualContractEndDate != null ? inputDateFormatter.format(actualContractEndDate) : "")
+                                    .append("|")
+                                    .append(latestDocumentDateBeforeRef != null ? inputDateFormatter.format(latestDocumentDateBeforeRef) : "")
+                                    .append("||")
+                                    .append(kreditDTO.getSumma().intValue())
+                                    .append("|")
+                                    .append(countedGrafik)
+                                    .append("|M|MXD|")
+                                    .append(pod)
+                                    .append("|")
+                                    .append(inputDateFormatter.format(firstPaymentDate))
+                                    .append("|")
+                                    .append((nextPaymentDate != null) ? inputDateFormatter.format(nextPaymentDate) : "")
+                                    .append("||")
+                                    .append(outstandingPaymentNumber)
+                                    .append("|")
+                                    .append(outstandingBalance)
+                                    .append("|")
+                                    .append(overduePaymentsNumber)
+                                    .append("|")
+                                    .append(principalOverduePaymentNumber)
+                                    .append("|")
+                                    .append(interestOverduePaymentsNumber)
+                                    .append("|")
+                                    .append(principalOverduePaymentAmount + sumsForMaxDate.intValue())
+                                    .append("|")
+                                    .append(principalOverduePaymentAmount)
+                                    .append("|")
+                                    .append(sumsForMaxDate.intValue())
+                                    .append("|")
+                                    .append(overduePeriod)
+                                    .append("||||||||||")
+                                    .append(kreditDTO.getProsent().intValue())
+                                    .append("||||")
+                                    .append(zalogLs)
+                                    .append("|")
+                                    .append(kreditDTO.getKod())
+                                    .append("|")
+                                    .append(kreditDTO.getName())
+                                    .append("|")
+                                    .append(zalogSums.intValue())
+                                    .append("|UZS|||")
+                                    .append(zalogKodCb)
+                                    .append("|||D|||||||||||||||||||||||||||||||||||||||||||||||||||||||")
+                                    .append("\n");
+
+                            if (!"AC".equals(status)) processedEntries.add(uniqueKey);
+                            n++;
+                        }
                     }
                 }
             }
+            String finalData = dataBuilder.toString();
+            writer.write(finalData);
+            System.out.println(finalData);
+            writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + (fizProjections.size() + n));
+
+            writer.close();
+
+            String zipFileName = file.getAbsolutePath() + ".zip";    // Создаем имя ZIP-файла
+
+            try (
+                    FileOutputStream fileos = new FileOutputStream(zipFileName);
+                    ZipOutputStream zos = new ZipOutputStream(fileos);
+                    FileInputStream fis2 = new FileInputStream(file)
+            ) {
+                ZipEntry zipEntry = new ZipEntry(file.getName());
+                zos.putNextEntry(zipEntry);
+
+                byte[] bytes = new byte[1024];
+                int length;
+                while ((length = fis2.read(bytes)) >= 0) {
+                    zos.write(bytes, 0, length);
+                }
+
+                zos.closeEntry();
+                System.out.println("Файл успешно упакован в архив: " + zipFileName);
+            }
+
+            return kreditDTOList;
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-
-        String finalData = dataBuilder.toString();
-        System.out.println(finalData);
-
-        return kreditDTOList;
     }
 
 }

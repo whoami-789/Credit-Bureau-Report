@@ -113,6 +113,8 @@ public interface AzolikFizRepository extends JpaRepository<AzolikFiz, String> {
     @Query("FROM AzolikFiz WHERE (datsIzm) between :StartDate and :EndDate")
     List<AzolikFiz> findByMonthAndYear(@Param("StartDate") LocalDate StartDate, @Param("EndDate") LocalDate EndDate);
 
+    List<AzolikFiz> findByKodchlen(String kodchlen);
+
     @Query("SELECT s.nameu FROM SprRayon s WHERE s.kod = :kod")
     Optional<String> findNameuByKod(String kod);
 }

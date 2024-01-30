@@ -38,4 +38,5 @@ public class KreditDTO {
     private List<GrafikDTO> grafiks;
     private List<ZalogDTO> zalogs;
     private List<ZalogXranenieDTO> zalogXranenieList;
+    private List<AzolikFizDTO> azolikFiz;
 }
