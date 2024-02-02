@@ -49,6 +49,7 @@ public class ReportService {
         List<KreditDTO> kreditsByModificationDate = getKreditsWithDetails(startDate, endDate);
         return new ReportDTO(kreditsByModificationDate);
     }
+
     public ReportDTO getReportByNumdog(LocalDate startDate, LocalDate endDate, String numdog) {
         List<KreditDTO> kreditsByModificationDate = getNumdog(startDate, endDate, numdog);
         return new ReportDTO(kreditsByModificationDate);
@@ -850,9 +851,9 @@ public class ReportService {
             LocalDate actualContractEndDate;
             int pod = 0;
             double principalOverduePaymentAmount = 0;
-            int interestOverduePaymentsNumber;
-            double principalOverduePaymentNumber;
-            int overduePaymentsNumber = 0;
+            double interestOverduePaymentsNumber = 0;
+            double principalOverduePaymentNumber = 0;
+            double overduePaymentsNumber = 0;
             int n = 0;
 
 
@@ -1032,15 +1033,16 @@ public class ReportService {
 
                     if (pogKredForMaxDate.intValue() == 0) {
                         principalOverduePaymentNumber = 0;
-                    } else principalOverduePaymentNumber = principalOverduePaymentAmount / pogKredForMaxDate.intValue();
+                    } else
+                        principalOverduePaymentNumber = principalOverduePaymentAmount / pogKredForMaxDate.doubleValue();
 
 
                     if (principalOverduePaymentNumber > interestOverduePaymentsNumber) {
-                        overduePaymentsNumber = (int) principalOverduePaymentNumber;
+                        overduePaymentsNumber = principalOverduePaymentNumber;
                     } else if (principalOverduePaymentNumber < interestOverduePaymentsNumber) {
                         overduePaymentsNumber = interestOverduePaymentsNumber;
                     } else if (principalOverduePaymentNumber == interestOverduePaymentsNumber) {
-                        overduePaymentsNumber = (int) principalOverduePaymentNumber;
+                        overduePaymentsNumber = principalOverduePaymentNumber;
                     } else if (principalOverduePaymentNumber == 0 && interestOverduePaymentsNumber == 0) {
                         overduePaymentsNumber = 0;
                     }
@@ -1178,7 +1180,7 @@ public class ReportService {
                             kreditDTO.getDatadog().getMonthValue() == refDate.getMonthValue()) {
                         overduePeriod = 0;
                     } else {
-                        overduePeriod = overduePaymentsNumber + 1;
+                        overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
 
 
@@ -1190,7 +1192,7 @@ public class ReportService {
                     boolean isUnique = !processedEntries.contains(uniqueKeyCACL);
 
                     if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null)) {
-                        if (isUniqueOrActive && (isUnique || "AC".equals(status))) { // Условие изменено для пропуска уникальности при "AC"
+                        if (isUniqueOrActive && (isUnique)) { // Условие изменено для пропуска уникальности при "AC"
                             dataBuilder.append("CI|MKOR0001||")
                                     .append(inputDateFormatter.format(refDate))
                                     .append("|")
@@ -1226,11 +1228,11 @@ public class ReportService {
                                     .append("|")
                                     .append(outstandingBalance)
                                     .append("|")
-                                    .append(overduePaymentsNumber)
+                                    .append((int) Math.ceil(overduePaymentsNumber))
                                     .append("|")
                                     .append((int) Math.ceil(principalOverduePaymentNumber))
                                     .append("|")
-                                    .append(interestOverduePaymentsNumber)
+                                    .append((int) interestOverduePaymentsNumber)
                                     .append("|")
                                     .append((int) principalOverduePaymentAmount + sumsForMaxDate.intValue())
                                     .append("|")
@@ -1270,7 +1272,12 @@ public class ReportService {
 
             writer.close();
 
-            String zipFileName = file.getAbsolutePath().replace(".txt", "") + ".zip";    // Создаем имя ZIP-файла
+            String newFolder = "/Users/rustamrahmov/Desktop/reports/";
+            File directory = new File(newFolder);
+            if (!directory.exists()) {
+                directory.mkdirs(); // Создает папку и все родительские папки, если они не существуют
+            }
+            String zipFileName = newFolder + file.getName().replace(".txt", ".zip");
 
             try (
                     FileOutputStream fileos = new FileOutputStream(zipFileName);
