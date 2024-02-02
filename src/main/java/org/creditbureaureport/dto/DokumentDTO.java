@@ -18,7 +18,5 @@ public class DokumentDTO {
     private BigDecimal sums;
     private String ls;
     private String lscor;
-    private List<SaldoDTO> saldos;
-
     // Другие поля по необходимости
 }

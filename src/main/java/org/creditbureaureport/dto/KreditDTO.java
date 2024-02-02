@@ -28,6 +28,8 @@ public class KreditDTO {
     private String lsKred;
     private String lsProc;
     private String name;
+    private String ls22812;
+    private String lsSsudKred;
 
     // Другие поля, соответствующие вашей модели Kredit
 

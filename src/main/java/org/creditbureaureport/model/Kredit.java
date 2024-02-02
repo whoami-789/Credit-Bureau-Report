@@ -218,7 +218,7 @@ public class Kredit {
     @Column(name = "lsprosr_proc")
     private String lsprosrProc;
 
-    @Transient
+    @Column(name = "ls22812")
     private String ls22812;
 
     @Column(name = "dats_izm_asoki")

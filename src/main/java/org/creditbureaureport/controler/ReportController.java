@@ -22,19 +22,29 @@ public class ReportController {
         this.kreditService = kreditService;
     }
 
+    //    @CrossOrigin(origins = "http://localhost:3000")
+//    @GetMapping
+//    public String getAllFizProjections(
+//            @RequestParam("startDate") LocalDate startDate,
+//            @RequestParam("endDate") LocalDate endDate) {
+//        return kreditService.getAllFizProjections(startDate, endDate);
+//    }
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping
-    public String getAllFizProjections(
-            @RequestParam("startDate") LocalDate startDate,
-            @RequestParam("endDate") LocalDate endDate) {
-        return kreditService.getAllFizProjections(startDate, endDate);
-    }
-
-    @GetMapping("/dok/dats")
     public ResponseEntity<ReportDTO> generateReport(
             @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         ReportDTO report = kreditService.getReport(startDate, endDate);
+        return ResponseEntity.ok(report);
+    }
+
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/numdog")
+    public ResponseEntity<ReportDTO> generateReportByNumdog(
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam("numdog") String numdog) {
+        ReportDTO report = kreditService.getReportByNumdog(startDate, endDate, numdog);
         return ResponseEntity.ok(report);
     }
 }
