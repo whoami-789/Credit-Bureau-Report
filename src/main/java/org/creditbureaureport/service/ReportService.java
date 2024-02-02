@@ -584,7 +584,7 @@ public class ReportService {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
 
-                    if (overduePeriod > 0) contractStatusDomain = "E";
+                    if (overduePeriod > 1) contractStatusDomain = "E";
 
 
                     String uniqueKey;
@@ -1174,7 +1174,7 @@ public class ReportService {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
 
-                    if (overduePeriod > 0) contractStatusDomain = "E";
+                    if (overduePeriod > 1) contractStatusDomain = "E";
 
                     String uniqueKey;
                     if ("AC".equals(status)) {
