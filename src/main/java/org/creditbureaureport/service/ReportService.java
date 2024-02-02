@@ -563,9 +563,7 @@ public class ReportService {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
 
-                    if ((int) principalOverduePaymentAmount + sumsForMaxDate.intValue() > 1) {
-                        contractStatusDomain = "E";
-                    }
+
 
 
                     String uniqueKey;
@@ -579,6 +577,11 @@ public class ReportService {
                     // Изменяем логику определения уникальности для status "AC"
                     boolean isUnique = !processedEntries.contains(uniqueKey);
 
+                    if (overduePeriod > 1 && status.equals("AC")) {
+                        contractStatusDomain = "E";
+                    } else {
+                        contractStatusDomain = "";
+                    }
                     if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null)) {
                         if (isUnique) {
                             dataBuilder.append("CI|MKOR0001||")
@@ -1144,7 +1147,7 @@ public class ReportService {
 
                     if (status.equals("CA") || status.equals("CL")) zalogSums = BigDecimal.valueOf(0);
 
-                    int overduePeriod = 0;
+                    int overduePeriod;
 
                     if (status.equals("CA") || status.equals("CL")) {
                         overduePeriod = 1;
@@ -1155,7 +1158,11 @@ public class ReportService {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
 
-                    if (overduePeriod > 1) contractStatusDomain = "E";
+                    if (overduePeriod > 1 && status.equals("AC")) {
+                        contractStatusDomain = "E";
+                    } else {
+                        contractStatusDomain = "";
+                    }
 
                     String uniqueKey;
                     if ("AC".equals(status)) {
