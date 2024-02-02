@@ -34,7 +34,6 @@ public class KreditDTO {
     // Другие поля, соответствующие вашей модели Kredit
 
     // Списки DTO для связанных данных
-    private List<OverdueDTO> overdue;
     private List<DokumentDTO> dokuments;
     private List<SaldoDTO> saldo;
     private List<GrafikDTO> grafiks;

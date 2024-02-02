@@ -73,7 +73,7 @@ public class ReportService {
             fos.write(0xBB);
             fos.write(0xBF);
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fos, StandardCharsets.UTF_8));
-            writer.write("HD|MKOR0001|" + "26122023" + "|1.0|1|Initial test");
+            writer.write("HD|MKOR0001|" + outputDateFormat.format(currentDate) + "|1.0|1|Initial test");
             writer.newLine();
 
 
@@ -552,27 +552,6 @@ public class ReportService {
 
                     if (status.equals("CA") || status.equals("CL")) zalogSums = BigDecimal.valueOf(0);
 
-
-//                    List<OverdueDTO> overdueDTOs = kreditRepository.SpisProsrKred(kreditDTO.getNumdog(), refDate)
-//                            .stream()
-//                            .map(resultObject -> {
-//                                Object[] resultArray = (Object[]) resultObject; // Приведение к Object[]
-//                                System.out.println(Arrays.toString(resultArray));
-//                                OverdueDTO overdueDTO = new OverdueDTO();
-//                                overdueDTO.setPlannedPaymentDate((java.sql.Date) resultArray[1]); // Первый параметр
-//                                overdueDTO.setOverdueSumm((BigDecimal) resultArray[2]); // Второй параметр
-//                                overdueDTO.setOverduePeriod((String) resultArray[3]); // Третий параметр
-//                                return overdueDTO;
-//                            })
-//                            .collect(Collectors.toList());
-//
-//
-//                    kreditDTO.setOverdue(overdueDTOs);
-//
-//                    String overduePeriod = kreditDTO.getOverdue().stream()
-//                            .map(OverdueDTO::getOverduePeriod)
-//                            .collect(Collectors.joining(", "));
-
                     int overduePeriod = 0;
 
                     if (status.equals("CA") || status.equals("CL")) {
@@ -584,7 +563,9 @@ public class ReportService {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
 
-                    if (overduePeriod > 1) contractStatusDomain = "E";
+                    if ((int) principalOverduePaymentAmount + sumsForMaxDate.intValue() > 1) {
+                        contractStatusDomain = "E";
+                    }
 
 
                     String uniqueKey;
@@ -727,7 +708,7 @@ public class ReportService {
             fos.write(0xBB);
             fos.write(0xBF);
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fos, StandardCharsets.UTF_8));
-            writer.write("HD|MKOR0001|" + "26122023" + "|1.0|1|Initial test");
+            writer.write("HD|MKOR0001|" + outputDateFormat.format(currentDate) + "|1.0|1|Initial test");
             writer.newLine();
 
             // Находим кредиты за заданный период
