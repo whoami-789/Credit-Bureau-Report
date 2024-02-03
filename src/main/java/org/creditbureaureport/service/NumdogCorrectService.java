@@ -1,10 +1,10 @@
 package org.creditbureaureport.service;
 
 import org.creditbureaureport.dto.*;
-import org.creditbureaureport.model.AzolikFiz;
 import org.creditbureaureport.model.Kredit;
-import org.creditbureaureport.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.creditbureaureport.repository.DokRepository;
+import org.creditbureaureport.repository.KreditRepository;
+import org.creditbureaureport.repository.SaldoRepository;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -19,34 +19,26 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-
 @Service
-public class ReportService {
-
-    private final AzolikFizRepository azolikFizRepository;
-    private final AzolikYurRepository yurReportRepository;
+public class NumdogCorrectService {
 
     private final DokRepository dokRepository;
     private final KreditRepository kreditRepository;
     private final SaldoRepository saldoRepository;
 
-
-    @Autowired
-    public ReportService(AzolikFizRepository reportRepository, AzolikYurRepository yurReportRepository, DokRepository dokRepository, KreditRepository kreditRepository, SaldoRepository saldoRepository) {
-        this.azolikFizRepository = reportRepository;
-        this.yurReportRepository = yurReportRepository;
+    public NumdogCorrectService(DokRepository dokRepository, KreditRepository kreditRepository, SaldoRepository saldoRepository) {
         this.dokRepository = dokRepository;
         this.kreditRepository = kreditRepository;
         this.saldoRepository = saldoRepository;
     }
 
-    public ReportDTO getReport(LocalDate startDate, LocalDate endDate) {
-        List<KreditDTO> kreditsByModificationDate = getKreditsWithDetails(startDate, endDate);
+    public ReportDTO getReportByNumdog(LocalDate startDate, LocalDate endDate, String numdog) {
+        List<KreditDTO> kreditsByModificationDate = getNumdog(startDate, endDate, numdog);
         return new ReportDTO(kreditsByModificationDate);
     }
 
-    public List<KreditDTO> getKreditsWithDetails(LocalDate startDate, LocalDate endDate) {
-        List<AzolikFiz> fizProjections = azolikFizRepository.findByMonthAndYear(startDate, endDate);
+    public List<KreditDTO> getNumdog(LocalDate startDate, LocalDate endDate, String numdog) {
+
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
 
@@ -66,67 +58,9 @@ public class ReportService {
             writer.write("HD|MKOR0001|" + outputDateFormat.format(currentDate) + "|1.0|1|Initial test");
             writer.newLine();
 
-
-            for (AzolikFiz fizProjection : fizProjections) {
-                String genderCode = fizProjection.getFsobst() == 1 ? "M" : "F";
-                String new_address = "";
-                if (fizProjection.getLsvznos() != null) System.out.println(fizProjection.getLsvznos());
-                String address = fizProjection.getAdres();
-                if (!address.contains("шахар") && !address.contains("туман") &&
-                        !address.contains("tuman") && !address.contains("shahar")) {
-                    Optional<String> nameuOptional = azolikFizRepository.findNameuByKod(fizProjection.getKodRayon());
-                    if (nameuOptional.isPresent()) {
-                        new_address = nameuOptional.get() + " " + fizProjection.getAdres();
-                    }
-                } else {
-                    new_address = fizProjection.getAdres();
-                }
-
-                String telMobil = "";
-                String telHome = "";
-
-                if (!fizProjection.getTelmobil().replaceAll("\\s", "").isEmpty()) {
-                    telMobil = "2|" + fizProjection.getTelmobil().replaceAll("\\s", "");
-                } else {
-                    telMobil = "|";
-                }
-                if (!fizProjection.getTelhome().replaceAll("\\s", "").isEmpty()) {
-                    telHome = "|1|" + fizProjection.getTelmobil().replaceAll("\\s", "");
-                } else {
-                    telHome = "|";
-                }
-
-
-                String inn = "";
-                String pinfl = "";
-
-                if (fizProjection.getInn().trim().isEmpty() || fizProjection.getInn() == null) {
-                    inn = "|";
-                } else {
-                    inn = "|2|" + fizProjection.getInn().replaceAll("\\s", "");
-                }
-
-                if (fizProjection.getKodPension().trim().isEmpty() || fizProjection.getKodPension() == null) {
-                    pinfl = "|";
-                } else {
-                    pinfl = "1|" + fizProjection.getKodPension().replaceAll("\\s", "") + "|";
-                }
-
-                writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
-                        + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
-                        + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
-                        ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
-                        + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
-                        "||" + ((fizProjection.getPaspdo() != null) ? (inputDateFormatter.format(fizProjection.getPaspdo())) : "") + "||||||"
-                        + telMobil + telHome + "|||||||||||||||||||||||||||||||||||");
-                writer.newLine(); // Добавить новую строку
-            }
-
-
             // Находим кредиты за заданный период
-            List<Kredit> kredits = kreditRepository.findByDatsIzmBetween(startDate, endDate);
+            List<Kredit> kredits = kreditRepository.findByDatsIzmBetweenAndNumdog(startDate, endDate, numdog);
 
-            System.out.println(kredits.size());
             Map<LocalDate, String> refDates = new LinkedHashMap<>();
             Set<String> processedEntries = new HashSet<>();
 
@@ -557,7 +491,7 @@ public class ReportService {
 
                     if (status.equals("CA") || status.equals("CL")) zalogSums = BigDecimal.valueOf(0);
 
-                    int overduePeriod = 0;
+                    int overduePeriod;
 
                     if (status.equals("CA") || status.equals("CL")) {
                         overduePeriod = 1;
@@ -568,8 +502,11 @@ public class ReportService {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
 
-
-
+                    if (overduePeriod > 1 && status.equals("AC")) {
+                        contractStatusDomain = "E";
+                    } else {
+                        contractStatusDomain = "";
+                    }
 
                     String uniqueKey;
                     if ("AC".equals(status)) {
@@ -582,11 +519,6 @@ public class ReportService {
                     // Изменяем логику определения уникальности для status "AC"
                     boolean isUnique = !processedEntries.contains(uniqueKey);
 
-                    if (overduePeriod > 1 && status.equals("AC")) {
-                        contractStatusDomain = "E";
-                    } else {
-                        contractStatusDomain = "";
-                    }
                     if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null)) {
                         if (isUnique) {
                             dataBuilder.append("CI|MKOR0001||")
@@ -662,7 +594,7 @@ public class ReportService {
             String finalData = dataBuilder.toString();
             writer.write(finalData);
             System.out.println(finalData);
-            writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + (fizProjections.size() + n));
+            writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + n);
 
             writer.close();
 
@@ -697,6 +629,5 @@ public class ReportService {
             throw new RuntimeException(e);
         }
     }
-
 
 }
