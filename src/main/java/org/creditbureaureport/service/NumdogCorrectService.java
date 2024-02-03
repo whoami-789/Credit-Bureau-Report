@@ -450,6 +450,8 @@ public class NumdogCorrectService {
 
                     if (outstandingPaymentNumber > 0) {
                         pod = totalSum / outstandingPaymentNumber;
+                    } else if (status.equals("CA") || status.equals("CL")) {
+                        pod = kreditDTO.getSumma().intValue() / countedGrafik;
                     } else {
                         pod = totalSum;
                     }
@@ -488,8 +490,6 @@ public class NumdogCorrectService {
                     BigDecimal zalogSums = kreditDTO.getZalogs().stream()
                             .map(ZalogDTO::getSums)
                             .findAny().orElse(null);
-
-                    if (status.equals("CA") || status.equals("CL")) zalogSums = BigDecimal.valueOf(0);
 
                     int overduePeriod;
 
@@ -581,7 +581,7 @@ public class NumdogCorrectService {
                                     .append(zalogSums.intValue())
                                     .append("|UZS|||")
                                     .append(zalogKodCb)
-                                    .append("|||D|||||||||||||||||||||||||||||||||||||||||||||||||||||||")
+                                    .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
                                     .append("\n");
 
                             processedEntries.add(uniqueKey);

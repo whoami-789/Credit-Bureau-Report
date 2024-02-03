@@ -516,6 +516,8 @@ public class ReportService {
 
                     if (outstandingPaymentNumber > 0) {
                         pod = totalSum / outstandingPaymentNumber;
+                    } else if (status.equals("CA") || status.equals("CL")) {
+                        pod = kreditDTO.getSumma().intValue() / countedGrafik;
                     } else {
                         pod = totalSum;
                     }
@@ -555,8 +557,6 @@ public class ReportService {
                             .map(ZalogDTO::getSums)
                             .findAny().orElse(null);
 
-                    if (status.equals("CA") || status.equals("CL")) zalogSums = BigDecimal.valueOf(0);
-
                     int overduePeriod = 0;
 
                     if (status.equals("CA") || status.equals("CL")) {
@@ -567,8 +567,6 @@ public class ReportService {
                     } else {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
-
-
 
 
                     String uniqueKey;
@@ -649,7 +647,7 @@ public class ReportService {
                                     .append(zalogSums.intValue())
                                     .append("|UZS|||")
                                     .append(zalogKodCb)
-                                    .append("|||D|||||||||||||||||||||||||||||||||||||||||||||||||||||||")
+                                    .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
                                     .append("\n");
 
                             processedEntries.add(uniqueKey);
