@@ -112,8 +112,8 @@ public class ReportService {
                     pinfl = "1|" + fizProjection.getKodPension().replaceAll("\\s", "") + "|";
                 }
 
-                writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
-                        + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
+                writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya().trim() + "|"
+                        + fizProjection.getFam().trim() + "|" + fizProjection.getOtch().trim() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
                         + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
                         ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
                         + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
@@ -516,7 +516,7 @@ public class ReportService {
 
                     if (outstandingPaymentNumber > 0) {
                         pod = totalSum / outstandingPaymentNumber;
-                    } else if (status.equals("CA") || status.equals("CL")) {
+                    } else if ((status.equals("CA") || status.equals("CL")) && countedGrafik >= 1) {
                         pod = kreditDTO.getSumma().intValue() / countedGrafik;
                     } else {
                         pod = totalSum;
@@ -585,7 +585,7 @@ public class ReportService {
                     } else {
                         contractStatusDomain = "";
                     }
-                    if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null)) {
+                    if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null) && (countedGrafik >= 1)) {
                         if (isUnique) {
                             dataBuilder.append("CI|MKOR0001||")
                                     .append(inputDateFormatter.format(refDate))
@@ -652,7 +652,6 @@ public class ReportService {
 
                             processedEntries.add(uniqueKey);
                             n++; // Предполагается, что n - счетчик успешно обработанных записей
-
                         }
                     }
                 }

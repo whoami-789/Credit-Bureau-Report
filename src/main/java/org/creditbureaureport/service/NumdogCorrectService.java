@@ -450,7 +450,7 @@ public class NumdogCorrectService {
 
                     if (outstandingPaymentNumber > 0) {
                         pod = totalSum / outstandingPaymentNumber;
-                    } else if (status.equals("CA") || status.equals("CL")) {
+                    } else if ((status.equals("CA") || status.equals("CL")) && countedGrafik >= 1) {
                         pod = kreditDTO.getSumma().intValue() / countedGrafik;
                     } else {
                         pod = totalSum;
