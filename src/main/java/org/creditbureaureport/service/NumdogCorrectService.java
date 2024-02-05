@@ -519,7 +519,7 @@ public class NumdogCorrectService {
                     // Изменяем логику определения уникальности для status "AC"
                     boolean isUnique = !processedEntries.contains(uniqueKey);
 
-                    if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null)) {
+                    if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null) && (countedGrafik >= 1)) {
                         if (isUnique) {
                             dataBuilder.append("CI|MKOR0001||")
                                     .append(inputDateFormatter.format(refDate))
