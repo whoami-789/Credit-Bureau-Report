@@ -83,7 +83,7 @@ public class ClientCorrectService {
                 if (fizProjection.getInn().trim().isEmpty() || fizProjection.getInn() == null) {
                     inn = "|";
                 } else {
-                    inn = "|2|" + fizProjection.getInn().replaceAll("\\s", "");
+                    inn = "2|" + fizProjection.getInn().replaceAll("\\s", "");
                 }
 
                 if (fizProjection.getKodPension().trim().isEmpty() || fizProjection.getKodPension() == null) {
@@ -92,8 +92,8 @@ public class ClientCorrectService {
                     pinfl = "1|" + fizProjection.getKodPension().replaceAll("\\s", "") + "|";
                 }
 
-                writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya().trim() + "|"
-                        + fizProjection.getFam().trim() + "|" + fizProjection.getOtch().trim() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
+                writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
+                        + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
                         + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
                         ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
                         + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
