@@ -100,13 +100,13 @@ public class ReportService {
                 String inn = "";
                 String pinfl = "";
 
-                if (fizProjection.getInn().trim().isEmpty() || fizProjection.getInn() == null) {
+                if (fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) {
                     inn = "|";
                 } else {
                     inn = "2|" + fizProjection.getInn().replaceAll("\\s", "");
                 }
 
-                if (fizProjection.getKodPension().trim().isEmpty() || fizProjection.getKodPension() == null) {
+                if (fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty()) {
                     pinfl = "|";
                 } else {
                     pinfl = "1|" + fizProjection.getKodPension().replaceAll("\\s", "") + "|";
