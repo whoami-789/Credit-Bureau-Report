@@ -93,7 +93,7 @@ public class ReportService {
                 if (!fizProjection.getTelhome().replaceAll("\\s", "").isEmpty()) {
                     telHome = "|1|" + fizProjection.getTelmobil().replaceAll("\\s", "");
                 } else {
-                    telHome = "|";
+                    telHome = "||";
                 }
 
 
@@ -107,7 +107,7 @@ public class ReportService {
                 }
 
                 if (fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty()) {
-                    pinfl = "|";
+                    pinfl = "||";
                 } else {
                     pinfl = "1|" + fizProjection.getKodPension().replaceAll("\\s", "") + "|";
                 }
@@ -124,7 +124,7 @@ public class ReportService {
 
 
             // Находим кредиты за заданный период
-            List<Kredit> kredits = kreditRepository.findByDatsIzmBetween(startDate, endDate);
+            List<Kredit> kredits = kreditRepository.findByDatadogBetween(startDate, endDate);
 
             System.out.println(kredits.size());
             Map<LocalDate, String> refDates = new LinkedHashMap<>();
@@ -648,7 +648,7 @@ public class ReportService {
                                     .append("|")
                                     .append(kreditDTO.getKod())
                                     .append("||")
-                                    .append(zalogSums.intValue())
+                                    .append(zalogSums != null ? zalogSums.intValue() : "")
                                     .append("|UZS|||")
                                     .append(zalogKodCb)
                                     .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
@@ -667,6 +667,7 @@ public class ReportService {
 
             writer.close();
 
+//            String newFolder = "C:/Users/TPS-admin/Desktop/CRIF-reports/";
             String newFolder = "/Users/rustamrahmov/Desktop/reports/";
             File directory = new File(newFolder);
             if (!directory.exists()) {

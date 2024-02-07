@@ -598,6 +598,7 @@ public class NumdogCorrectService {
 
             writer.close();
 
+//            String newFolder = "C:/Users/TPS-admin/Desktop/CRIF-reports/";
             String newFolder = "/Users/rustamrahmov/Desktop/reports/";
             File directory = new File(newFolder);
             if (!directory.exists()) {

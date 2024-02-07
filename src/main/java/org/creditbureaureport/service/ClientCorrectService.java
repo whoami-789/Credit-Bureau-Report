@@ -73,7 +73,7 @@ public class ClientCorrectService {
                 if (!fizProjection.getTelhome().replaceAll("\\s", "").isEmpty()) {
                     telHome = "|1|" + fizProjection.getTelmobil().replaceAll("\\s", "");
                 } else {
-                    telHome = "|";
+                    telHome = "||";
                 }
 
 
@@ -87,7 +87,7 @@ public class ClientCorrectService {
                 }
 
                 if (fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty()) {
-                    pinfl = "|";
+                    pinfl = "||";
                 } else {
                     pinfl = "1|" + fizProjection.getKodPension().replaceAll("\\s", "") + "|";
                 }
@@ -105,6 +105,7 @@ public class ClientCorrectService {
 
             writer.close();
 
+//            String newFolder = "C:/Users/TPS-admin/Desktop/CRIF-reports/";
             String newFolder = "/Users/rustamrahmov/Desktop/reports/";
             File directory = new File(newFolder);
             if (!directory.exists()) {
