@@ -124,7 +124,7 @@ public class ReportService {
 
 
             // Находим кредиты за заданный период
-            List<Kredit> kredits = kreditRepository.findByDatadogBetween(startDate, endDate);
+            List<Kredit> kredits = kreditRepository.findByDatsIzmBetween(startDate, endDate);
 
             System.out.println(kredits.size());
             Map<LocalDate, String> refDates = new LinkedHashMap<>();
@@ -307,6 +307,7 @@ public class ReportService {
                             .map(GrafikDTO::getDats)
                             .count());
 
+
                     if (kreditDTO.getDatsZakr() == null || kreditDTO.getDatsZakr().isAfter(refDate)) {
                         actualContractEndDate = null;
                     } else {
@@ -319,6 +320,10 @@ public class ReportService {
                         status = "CA";
                     } else {
                         status = "CL";
+                    }
+
+                    if (status.equals("AC") && countedGrafik == 0) {
+                        countedGrafik = 1;
                     }
 
                     BigDecimal grafikPogKred = kreditDTO.getGrafiks().stream()
@@ -667,8 +672,8 @@ public class ReportService {
 
             writer.close();
 
-//            String newFolder = "C:/Users/TPS-admin/Desktop/CRIF-reports/";
-            String newFolder = "/Users/rustamrahmov/Desktop/reports/";
+            String newFolder = "C:/Users/TPS-admin/Desktop/CRIF-reports/";
+//            String newFolder = "/Users/rustamrahmov/Desktop/reports/";
             File directory = new File(newFolder);
             if (!directory.exists()) {
                 directory.mkdirs(); // Создает папку и все родительские папки, если они не существуют

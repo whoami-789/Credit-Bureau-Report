@@ -1,10 +1,10 @@
 package org.creditbureaureport.service;
 
 import org.creditbureaureport.dto.*;
+import org.creditbureaureport.model.AzolikFiz;
 import org.creditbureaureport.model.Kredit;
-import org.creditbureaureport.repository.DokRepository;
-import org.creditbureaureport.repository.KreditRepository;
-import org.creditbureaureport.repository.SaldoRepository;
+import org.creditbureaureport.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -20,25 +20,33 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @Service
-public class NumdogCorrectService {
+public class ReportDataDogService {
+
+
+    private final AzolikFizRepository azolikFizRepository;
+    private final AzolikYurRepository yurReportRepository;
 
     private final DokRepository dokRepository;
     private final KreditRepository kreditRepository;
     private final SaldoRepository saldoRepository;
 
-    public NumdogCorrectService(DokRepository dokRepository, KreditRepository kreditRepository, SaldoRepository saldoRepository) {
+    @Autowired
+    public ReportDataDogService(AzolikFizRepository azolikFizRepository, AzolikYurRepository yurReportRepository, DokRepository dokRepository, KreditRepository kreditRepository, SaldoRepository saldoRepository) {
+        this.azolikFizRepository = azolikFizRepository;
+        this.yurReportRepository = yurReportRepository;
         this.dokRepository = dokRepository;
         this.kreditRepository = kreditRepository;
         this.saldoRepository = saldoRepository;
     }
 
-    public ReportDTO getReportByNumdog(LocalDate startDate, LocalDate endDate, String numdog) {
-        List<KreditDTO> kreditsByModificationDate = getNumdog(startDate, endDate, numdog);
+
+    public ReportDTO getReport(LocalDate startDate, LocalDate endDate) {
+        List<KreditDTO> kreditsByModificationDate = getKreditsWithDetails(startDate, endDate);
         return new ReportDTO(kreditsByModificationDate);
     }
 
-    public List<KreditDTO> getNumdog(LocalDate startDate, LocalDate endDate, String numdog) {
-
+    public List<KreditDTO> getKreditsWithDetails(LocalDate startDate, LocalDate endDate) {
+        List<AzolikFiz> fizProjections = azolikFizRepository.findByMonthAndYear(startDate, endDate);
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
 
@@ -58,9 +66,67 @@ public class NumdogCorrectService {
             writer.write("HD|MKOR0001|" + outputDateFormat.format(currentDate) + "|1.0|1|Initial test");
             writer.newLine();
 
-            // Находим кредиты за заданный период
-            List<Kredit> kredits = kreditRepository.findByDatsIzmBetweenAndNumdog(startDate, endDate, numdog);
 
+            for (AzolikFiz fizProjection : fizProjections) {
+                String genderCode = fizProjection.getFsobst() == 1 ? "M" : "F";
+                String new_address = "";
+                if (fizProjection.getLsvznos() != null) System.out.println(fizProjection.getLsvznos());
+                String address = fizProjection.getAdres();
+                if (!address.contains("шахар") && !address.contains("туман") &&
+                        !address.contains("tuman") && !address.contains("shahar")) {
+                    Optional<String> nameuOptional = azolikFizRepository.findNameuByKod(fizProjection.getKodRayon());
+                    if (nameuOptional.isPresent()) {
+                        new_address = nameuOptional.get() + " " + fizProjection.getAdres();
+                    }
+                } else {
+                    new_address = fizProjection.getAdres();
+                }
+
+                String telMobil = "";
+                String telHome = "";
+
+                if (!fizProjection.getTelmobil().replaceAll("\\s", "").isEmpty()) {
+                    telMobil = "2|" + fizProjection.getTelmobil().replaceAll("\\s", "");
+                } else {
+                    telMobil = "|";
+                }
+                if (!fizProjection.getTelhome().replaceAll("\\s", "").isEmpty()) {
+                    telHome = "|1|" + fizProjection.getTelmobil().replaceAll("\\s", "");
+                } else {
+                    telHome = "||";
+                }
+
+
+                String inn = "";
+                String pinfl = "";
+
+                if (fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) {
+                    inn = "|";
+                } else {
+                    inn = "2|" + fizProjection.getInn().replaceAll("\\s", "");
+                }
+
+                if (fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty()) {
+                    pinfl = "||";
+                } else {
+                    pinfl = "1|" + fizProjection.getKodPension().replaceAll("\\s", "") + "|";
+                }
+
+                writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
+                        + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
+                        + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
+                        ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
+                        + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
+                        "||" + ((fizProjection.getPaspdo() != null) ? (inputDateFormatter.format(fizProjection.getPaspdo())) : "") + "||||||"
+                        + telMobil + telHome + "|||||||||||||||||||||||||||||||||||");
+                writer.newLine(); // Добавить новую строку
+            }
+
+
+            // Находим кредиты за заданный период
+            List<Kredit> kredits = kreditRepository.findByDatadogBetween(startDate, endDate);
+
+            System.out.println(kredits.size());
             Map<LocalDate, String> refDates = new LinkedHashMap<>();
             Set<String> processedEntries = new HashSet<>();
 
@@ -240,7 +306,6 @@ public class NumdogCorrectService {
                     Integer countedGrafik = Math.toIntExact(kreditDTO.getGrafiks().stream()
                             .map(GrafikDTO::getDats)
                             .count());
-
 
                     if (kreditDTO.getDatsZakr() == null || kreditDTO.getDatsZakr().isAfter(refDate)) {
                         actualContractEndDate = null;
@@ -461,6 +526,10 @@ public class NumdogCorrectService {
                         pod = totalSum;
                     }
 
+                    if (pod == 0 && countedGrafik >= 1) {
+                        pod = kreditDTO.getSumma().intValue() / countedGrafik;
+                    }
+
                     LocalDate firstPaymentDate = kreditDTO.getGrafiks().stream()
                             .min(Comparator.comparing(GrafikDTO::getDats))
                             .map(GrafikDTO::getDats)
@@ -496,7 +565,7 @@ public class NumdogCorrectService {
                             .map(ZalogDTO::getSums)
                             .findAny().orElse(null);
 
-                    int overduePeriod;
+                    int overduePeriod = 0;
 
                     if (status.equals("CA") || status.equals("CL")) {
                         overduePeriod = 1;
@@ -507,11 +576,6 @@ public class NumdogCorrectService {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
 
-                    if (overduePeriod > 1 && status.equals("AC")) {
-                        contractStatusDomain = "E";
-                    } else {
-                        contractStatusDomain = "";
-                    }
 
                     String uniqueKey;
                     if ("AC".equals(status)) {
@@ -524,6 +588,11 @@ public class NumdogCorrectService {
                     // Изменяем логику определения уникальности для status "AC"
                     boolean isUnique = !processedEntries.contains(uniqueKey);
 
+                    if (overduePeriod > 1 && status.equals("AC")) {
+                        contractStatusDomain = "E";
+                    } else {
+                        contractStatusDomain = "";
+                    }
                     if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null) && (countedGrafik >= 1)) {
                         if (isUnique) {
                             dataBuilder.append("CI|MKOR0001||")
@@ -583,7 +652,7 @@ public class NumdogCorrectService {
                                     .append("|")
                                     .append(kreditDTO.getKod())
                                     .append("||")
-                                    .append(zalogSums.intValue())
+                                    .append(zalogSums != null ? zalogSums.intValue() : "")
                                     .append("|UZS|||")
                                     .append(zalogKodCb)
                                     .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
@@ -591,7 +660,6 @@ public class NumdogCorrectService {
 
                             processedEntries.add(uniqueKey);
                             n++; // Предполагается, что n - счетчик успешно обработанных записей
-
                         }
                     }
                 }
@@ -599,7 +667,7 @@ public class NumdogCorrectService {
             String finalData = dataBuilder.toString();
             writer.write(finalData);
             System.out.println(finalData);
-            writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + n);
+            writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + (fizProjections.size() + n));
 
             writer.close();
 
