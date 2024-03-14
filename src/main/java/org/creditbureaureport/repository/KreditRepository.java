@@ -3,7 +3,6 @@ package org.creditbureaureport.repository;
 import org.creditbureaureport.model.Kredit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.query.Procedure;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,6 +20,7 @@ public interface KreditRepository extends JpaRepository<Kredit, String> {
     List<Kredit> findByDatsIzmBetween(LocalDate start, LocalDate end);
     List<Kredit> findByDatsIzmBetweenAndNumdog(LocalDate start, LocalDate end, String numdog);
     List<Kredit> findByDatadogBetween(LocalDate start, LocalDate end);
+    List<Kredit> findKodByDatadogBetween(LocalDate start, LocalDate end);
 
     @Query(value = "select * from SpisokProsrochennixKreditov(:numdog, :endate)", nativeQuery = true)
     List<Object> SpisProsrKred(String numdog, LocalDate endate);

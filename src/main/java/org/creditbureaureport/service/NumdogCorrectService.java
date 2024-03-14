@@ -241,6 +241,9 @@ public class NumdogCorrectService {
                             .map(GrafikDTO::getDats)
                             .count());
 
+                    if (countedGrafik == 0) {
+                        countedGrafik = 1;
+                    }
 
                     if (kreditDTO.getDatsZakr() == null || kreditDTO.getDatsZakr().isAfter(refDate)) {
                         actualContractEndDate = null;
@@ -254,10 +257,6 @@ public class NumdogCorrectService {
                         status = "CA";
                     } else {
                         status = "CL";
-                    }
-
-                    if (status.equals("AC") && countedGrafik == 0) {
-                        countedGrafik = 1;
                     }
 
                     BigDecimal grafikPogKred = kreditDTO.getGrafiks().stream()
@@ -361,25 +360,28 @@ public class NumdogCorrectService {
                             .map(SaldoDTO::getSums) // извлечение значения sums
                             .orElse(BigDecimal.ZERO); // если нет подходящих записей, возвращаем 0
 
+                    BigDecimal pogProcForMaxDate = kreditDTO.getGrafiks().stream()
+                            .filter(g -> !g.getDats().isAfter(refDate)) // фильтрация записей до и включая reference_date
+                            .max(Comparator.comparing(GrafikDTO::getDats)) // поиск максимальной даты
+                            .map(GrafikDTO::getPogProc) // извлечение значения pog_kred
+                            .orElse(BigDecimal.ZERO); // если нет подходящих записей, возвращаем 0
+
 
                     if (status.equals("CA") || status.equals("CL")) {
                         interestOverduePaymentsNumber = 0;
 
                     } else if (sumsForMaxDate.intValue() == 0) {
                         interestOverduePaymentsNumber = 0;
-                    } else if (dokDatsLsLscor - dokDatsLsLscorStartsWith > 0) {
-                        interestOverduePaymentsNumber = dokDatsLsLscor - dokDatsLsLscorStartsWith;
-                    } else if (dokDatsLsLscor - dokDatsLsLscorStartsWith <= 0 && sumsForMaxDate.intValue() > 0) {
-                        interestOverduePaymentsNumber = 1;
                     } else {
-                        interestOverduePaymentsNumber = 0;
+                        interestOverduePaymentsNumber = Math.ceil(sumsForMaxDate.doubleValue() / pogProcForMaxDate.doubleValue());
                     }
 
 
                     if (pogKredForMaxDate.intValue() == 0) {
                         principalOverduePaymentNumber = 0;
-                    } else
+                    } else {
                         principalOverduePaymentNumber = principalOverduePaymentAmount / pogKredForMaxDate.doubleValue();
+                    }
 
 
                     if (principalOverduePaymentNumber > interestOverduePaymentsNumber) {
@@ -390,6 +392,12 @@ public class NumdogCorrectService {
                         overduePaymentsNumber = principalOverduePaymentNumber;
                     } else if (principalOverduePaymentNumber == 0 && interestOverduePaymentsNumber == 0) {
                         overduePaymentsNumber = 0;
+                    }
+
+                    if (status.equals("CA") || status.equals("CL")) {
+                        principalOverduePaymentNumber = 0;
+                        principalOverduePaymentAmount = 0;
+                        interestOverduePaymentsNumber = 0;
                     }
 
                     SaldoDTO latestSaldoLsKred = kreditDTO.getSaldo().stream()
@@ -444,6 +452,10 @@ public class NumdogCorrectService {
                             .filter(dats -> dats.isAfter(refDate) || dats.isEqual(refDate))
                             .count());
 
+                    if (outstandingPaymentNumber == 0 && status.equals("AC")) {
+                        outstandingPaymentNumber = 1;
+                    }
+
 
                     if (status.equals("CA") || status.equals("CL")) outstandingPaymentNumber = 0;
                     int totalSum = (sumlspeni != null ? sumlspeni.intValue() : 0)
@@ -459,6 +471,10 @@ public class NumdogCorrectService {
                         pod = kreditDTO.getSumma().intValue() / countedGrafik;
                     } else {
                         pod = totalSum;
+                    }
+
+                    if (pod == 0 && countedGrafik >= 1) {
+                        pod = kreditDTO.getSumma().intValue() / countedGrafik;
                     }
 
                     LocalDate firstPaymentDate = kreditDTO.getGrafiks().stream()
@@ -486,17 +502,20 @@ public class NumdogCorrectService {
 
                     String zalogLs = kreditDTO.getZalogs().stream()
                             .map(ZalogDTO::getLs)
-                            .collect(Collectors.joining());
+                            .findFirst()
+                            .orElse(null); // Если список пуст, то вернуть null
 
                     String zalogKodCb = kreditDTO.getZalogs().stream()
+                            .filter(zalog -> zalogLs.equals(zalog.getLs()))
                             .map(ZalogDTO::getKodCb)
-                            .collect(Collectors.joining());
+                            .findFirst()
+                            .orElse(null); // Если список пуст, то вернуть null
 
                     BigDecimal zalogSums = kreditDTO.getZalogs().stream()
                             .map(ZalogDTO::getSums)
                             .findAny().orElse(null);
 
-                    int overduePeriod;
+                    int overduePeriod = 0;
 
                     if (status.equals("CA") || status.equals("CL")) {
                         overduePeriod = 1;
@@ -507,10 +526,16 @@ public class NumdogCorrectService {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
 
-                    if (overduePeriod > 1 && status.equals("AC")) {
-                        contractStatusDomain = "E";
+                    if (overduePeriod > 8) {
+                        overduePeriod = 8;
+                    }
+
+
+                    String guarantor = "";
+                    if (zalogLs == null || zalogLs.isEmpty()) {
+                        guarantor = "";
                     } else {
-                        contractStatusDomain = "";
+                        guarantor = kreditDTO.getKod();
                     }
 
                     String uniqueKey;
@@ -524,74 +549,83 @@ public class NumdogCorrectService {
                     // Изменяем логику определения уникальности для status "AC"
                     boolean isUnique = !processedEntries.contains(uniqueKey);
 
-                    if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null) && (countedGrafik >= 1)) {
-                        if (isUnique) {
-                            dataBuilder.append("CI|MKOR0001||")
-                                    .append(inputDateFormatter.format(refDate))
-                                    .append("|")
-                                    .append(kreditDTO.getKod())
-                                    .append("|B|")
-                                    .append(kreditDTO.getNumdog().replaceAll("\\s", ""))
-                                    .append("|")
-                                    .append(vidKred)
-                                    .append("|")
-                                    .append(status)
-                                    .append("|")
-                                    .append(contractStatusDomain)
-                                    .append("|UZS|UZS|")
-                                    .append(inputDateFormatter.format(kreditDTO.getDatadog()))
-                                    .append("|")
-                                    .append(inputDateFormatter.format(kreditDTO.getDatadog()))
-                                    .append("|")
-                                    .append(inputDateFormatter.format(latestDate))
-                                    .append("|")
-                                    .append(actualContractEndDate != null ? inputDateFormatter.format(actualContractEndDate) : "")
-                                    .append("|")
-                                    .append(latestDocumentDateBeforeRef != null ? inputDateFormatter.format(latestDocumentDateBeforeRef) : "")
-                                    .append("||")
-                                    .append(kreditDTO.getSumma().intValue())
-                                    .append("|")
-                                    .append(countedGrafik)
-                                    .append("|M|MXD|")
-                                    .append(pod)
-                                    .append("|")
-                                    .append(inputDateFormatter.format(firstPaymentDate))
-                                    .append("|")
-                                    .append((nextPaymentDate != null) ? inputDateFormatter.format(nextPaymentDate) : "")
-                                    .append("||")
-                                    .append(outstandingPaymentNumber)
-                                    .append("|")
-                                    .append(outstandingBalance)
-                                    .append("|")
-                                    .append((int) Math.ceil(overduePaymentsNumber))
-                                    .append("|")
-                                    .append((int) Math.ceil(principalOverduePaymentNumber))
-                                    .append("|")
-                                    .append((int) interestOverduePaymentsNumber)
-                                    .append("|")
-                                    .append((int) principalOverduePaymentAmount + sumsForMaxDate.intValue())
-                                    .append("|")
-                                    .append((int) principalOverduePaymentAmount)
-                                    .append("|")
-                                    .append(sumsForMaxDate.intValue())
-                                    .append("|")
-                                    .append(overduePeriod)
-                                    .append("||||||||||")
-                                    .append(kreditDTO.getProsent().intValue())
-                                    .append("||||")
-                                    .append(zalogLs)
-                                    .append("|")
-                                    .append(kreditDTO.getKod())
-                                    .append("||")
-                                    .append(zalogSums.intValue())
-                                    .append("|UZS|||")
-                                    .append(zalogKodCb)
-                                    .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
-                                    .append("\n");
+                    if (overduePeriod > 1 && status.equals("AC")) {
+                        contractStatusDomain = "E";
+                    } else {
+                        contractStatusDomain = "";
+                    }
 
-                            processedEntries.add(uniqueKey);
-                            n++; // Предполагается, что n - счетчик успешно обработанных записей
+                    if (!(status.equals("AC") && outstandingBalance == 0 && principalOverduePaymentAmount == 0)) {
+                        if (!kreditDTO.getLsKred().isEmpty() || !kreditDTO.getLsProc().isEmpty()) {
+                            if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null) && (countedGrafik >= 1)) {
+                                if (isUnique) {
+                                    dataBuilder.append("CI|MKOR0001||")
+                                            .append(inputDateFormatter.format(refDate))
+                                            .append("|")
+                                            .append(kreditDTO.getKod())
+                                            .append("|B|")
+                                            .append(kreditDTO.getNumdog().replaceAll("\\s", ""))
+                                            .append("|")
+                                            .append(vidKred)
+                                            .append("|")
+                                            .append(status)
+                                            .append("|")
+                                            .append(contractStatusDomain)
+                                            .append("|UZS|UZS|")
+                                            .append(inputDateFormatter.format(kreditDTO.getDatadog()))
+                                            .append("|")
+                                            .append(inputDateFormatter.format(kreditDTO.getDatadog()))
+                                            .append("|")
+                                            .append(inputDateFormatter.format(latestDate))
+                                            .append("|")
+                                            .append(actualContractEndDate != null ? inputDateFormatter.format(actualContractEndDate) : "")
+                                            .append("|")
+                                            .append(latestDocumentDateBeforeRef != null ? inputDateFormatter.format(latestDocumentDateBeforeRef) : "")
+                                            .append("||")
+                                            .append(kreditDTO.getSumma().intValue())
+                                            .append("|")
+                                            .append(countedGrafik)
+                                            .append("|M|MXD|")
+                                            .append(pod)
+                                            .append("|")
+                                            .append(inputDateFormatter.format(firstPaymentDate))
+                                            .append("|")
+                                            .append((nextPaymentDate != null) ? inputDateFormatter.format(nextPaymentDate) : "")
+                                            .append("||")
+                                            .append(outstandingPaymentNumber)
+                                            .append("|")
+                                            .append(outstandingBalance)
+                                            .append("|")
+                                            .append((int) Math.ceil(overduePaymentsNumber))
+                                            .append("|")
+                                            .append((int) Math.ceil(principalOverduePaymentNumber))
+                                            .append("|")
+                                            .append((int) interestOverduePaymentsNumber)
+                                            .append("|")
+                                            .append((int) principalOverduePaymentAmount + sumsForMaxDate.intValue())
+                                            .append("|")
+                                            .append((int) principalOverduePaymentAmount)
+                                            .append("|")
+                                            .append(sumsForMaxDate.intValue())
+                                            .append("|")
+                                            .append(overduePeriod)
+                                            .append("||||||||||")
+                                            .append(kreditDTO.getProsent().intValue())
+                                            .append("||||")
+                                            .append(zalogLs != null ? zalogLs : "")
+                                            .append("|")
+                                            .append(guarantor)
+                                            .append("||")
+                                            .append(zalogSums != null ? zalogSums.intValue() : "")
+                                            .append("|UZS|||")
+                                            .append(zalogKodCb != null ? zalogKodCb : "")
+                                            .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
+                                            .append("\n");
 
+                                    processedEntries.add(uniqueKey);
+                                    n++; // Предполагается, что n - счетчик успешно обработанных записей
+                                }
+                            }
                         }
                     }
                 }

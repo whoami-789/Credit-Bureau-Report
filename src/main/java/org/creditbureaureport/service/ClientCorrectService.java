@@ -9,9 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -29,6 +27,7 @@ public class ClientCorrectService {
         List<AzolikFiz> fizProjections = azolikFizRepository.findByKodchlen(client);
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
+        Set<String> innAndPinfl = new HashSet<>();
 
 
         try {
@@ -80,6 +79,11 @@ public class ClientCorrectService {
                 String inn = "";
                 String pinfl = "";
 
+                if (fizProjection.getInn() != null && inn.matches("^(.)\\1+$")) {
+                    fizProjection.setInn(null);
+                }
+
+
                 if (fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) {
                     inn = "|";
                 } else {
@@ -92,16 +96,24 @@ public class ClientCorrectService {
                     pinfl = "1|" + fizProjection.getKodPension().replaceAll("\\s", "") + "|";
                 }
 
-                writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
-                        + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
-                        + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
-                        ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
-                        + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
-                        "||" + ((fizProjection.getPaspdo() != null) ? (inputDateFormatter.format(fizProjection.getPaspdo())) : "") + "||||||"
-                        + telMobil + telHome + "|||||||||||||||||||||||||||||||||||");
-                writer.newLine(); // Добавить новую строку
+                int innAndPinflCount = 0;
+
+                if ((inn == null || inn.trim().isEmpty()) || (pinfl == null || pinfl.trim().isEmpty())) {
+                    innAndPinfl.add(String.valueOf(innAndPinflCount + 1));
+                }
+
+                if (!(inn == null || inn.trim().isEmpty()) || !(pinfl == null || pinfl.trim().isEmpty())) {
+                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
+                            + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
+                            + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
+                            ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
+                            + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
+                            "||" + ((fizProjection.getPaspdo() != null) ? (inputDateFormatter.format(fizProjection.getPaspdo())) : "") + "||||||"
+                            + telMobil + telHome + "|||||||||||||||||||||||||||||||||||");
+                    writer.newLine(); // Добавить новую строку
+                }
             }
-            writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + (fizProjections.size()));
+            writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + (fizProjections.size() - innAndPinfl.size()));
 
             writer.close();
 

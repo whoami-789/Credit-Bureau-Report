@@ -1,6 +1,7 @@
 package org.creditbureaureport.repository;
 
 import org.creditbureaureport.model.AzolikFiz;
+import org.creditbureaureport.model.Kredit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -118,4 +119,5 @@ public interface AzolikFizRepository extends JpaRepository<AzolikFiz, String> {
 
     @Query("SELECT s.nameu FROM SprRayon s WHERE s.kod = :kod")
     Optional<String> findNameuByKod(String kod);
+
 }

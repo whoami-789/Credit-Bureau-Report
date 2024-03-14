@@ -46,7 +46,9 @@ public class ReportService {
     }
 
     public List<KreditDTO> getKreditsWithDetails(LocalDate startDate, LocalDate endDate) {
-        List<AzolikFiz> fizProjections = azolikFizRepository.findByMonthAndYear(startDate, endDate);
+        List<Kredit> kreditList = kreditRepository.findByDatadogBetween(startDate, endDate);
+        Set<String> uniqueKods = new HashSet<>();
+        Set<String> innAndPinfl = new HashSet<>();
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("ddMMyyyy");
 
@@ -67,59 +69,79 @@ public class ReportService {
             writer.newLine();
 
 
-            for (AzolikFiz fizProjection : fizProjections) {
-                String genderCode = fizProjection.getFsobst() == 1 ? "M" : "F";
-                String new_address = "";
-                if (fizProjection.getLsvznos() != null) System.out.println(fizProjection.getLsvznos());
-                String address = fizProjection.getAdres();
-                if (!address.contains("шахар") && !address.contains("туман") &&
-                        !address.contains("tuman") && !address.contains("shahar")) {
-                    Optional<String> nameuOptional = azolikFizRepository.findNameuByKod(fizProjection.getKodRayon());
-                    if (nameuOptional.isPresent()) {
-                        new_address = nameuOptional.get() + " " + fizProjection.getAdres();
+            for (Kredit kredit : kreditList) {
+
+                if (!uniqueKods.contains(kredit.getKod())) {
+                    uniqueKods.add(kredit.getKod());
+                    List<AzolikFiz> azolikFizList = azolikFizRepository.findByKodchlen(kredit.getKod());
+                    for (AzolikFiz fizProjection : azolikFizList) {
+                        String genderCode = fizProjection.getFsobst() == 1 ? "M" : "F";
+                        String new_address = "";
+                        if (fizProjection.getLsvznos() != null) System.out.println(fizProjection.getLsvznos());
+                        String address = fizProjection.getAdres();
+                        if (!address.contains("шахар") && !address.contains("туман") &&
+                                !address.contains("tuman") && !address.contains("shahar")) {
+                            Optional<String> nameuOptional = azolikFizRepository.findNameuByKod(fizProjection.getKodRayon());
+                            if (nameuOptional.isPresent()) {
+                                new_address = nameuOptional.get() + " " + fizProjection.getAdres();
+                            }
+                        } else {
+                            new_address = fizProjection.getAdres();
+                        }
+
+                        String telMobil = "";
+                        String telHome = "";
+
+                        if (!fizProjection.getTelmobil().replaceAll("\\s", "").isEmpty()) {
+                            telMobil = "2|" + fizProjection.getTelmobil().replaceAll("\\s", "");
+                        } else {
+                            telMobil = "|";
+                        }
+                        if (!fizProjection.getTelhome().replaceAll("\\s", "").isEmpty()) {
+                            telHome = "|1|" + fizProjection.getTelmobil().replaceAll("\\s", "");
+                        } else {
+                            telHome = "||";
+                        }
+
+
+                        String inn = "";
+                        String pinfl = "";
+
+                        if (fizProjection.getInn() != null && inn.matches("^(.)\\1+$")) {
+                            fizProjection.setInn(null);
+                        }
+
+
+                        if (fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) {
+                            inn = "|";
+                        } else {
+                            inn = "2|" + fizProjection.getInn().replaceAll("\\s", "");
+                        }
+
+                        if (fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty()) {
+                            pinfl = "||";
+                        } else {
+                            pinfl = "1|" + fizProjection.getKodPension().replaceAll("\\s", "") + "|";
+                        }
+
+                        int innAndPinflCount = 0;
+
+                        if ((inn == null || inn.trim().isEmpty()) || (pinfl == null || pinfl.trim().isEmpty())) {
+                            innAndPinfl.add(String.valueOf(innAndPinflCount + 1));
+                        }
+
+                        if (!(inn == null || inn.trim().isEmpty()) || !(pinfl == null || pinfl.trim().isEmpty())) {
+                            writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
+                                    + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
+                                    + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
+                                    ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
+                                    + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
+                                    "||" + ((fizProjection.getPaspdo() != null) ? (inputDateFormatter.format(fizProjection.getPaspdo())) : "") + "||||||"
+                                    + telMobil + telHome + "|||||||||||||||||||||||||||||||||||");
+                            writer.newLine(); // Добавить новую строку
+                        }
                     }
-                } else {
-                    new_address = fizProjection.getAdres();
                 }
-
-                String telMobil = "";
-                String telHome = "";
-
-                if (!fizProjection.getTelmobil().replaceAll("\\s", "").isEmpty()) {
-                    telMobil = "2|" + fizProjection.getTelmobil().replaceAll("\\s", "");
-                } else {
-                    telMobil = "|";
-                }
-                if (!fizProjection.getTelhome().replaceAll("\\s", "").isEmpty()) {
-                    telHome = "|1|" + fizProjection.getTelmobil().replaceAll("\\s", "");
-                } else {
-                    telHome = "||";
-                }
-
-
-                String inn = "";
-                String pinfl = "";
-
-                if (fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) {
-                    inn = "|";
-                } else {
-                    inn = "2|" + fizProjection.getInn().replaceAll("\\s", "");
-                }
-
-                if (fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty()) {
-                    pinfl = "||";
-                } else {
-                    pinfl = "1|" + fizProjection.getKodPension().replaceAll("\\s", "") + "|";
-                }
-
-                writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
-                        + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
-                        + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
-                        ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
-                        + "|" + ((fizProjection.getVidanPasp() != null) ? (inputDateFormatter.format(fizProjection.getVidanPasp())) : "") +
-                        "||" + ((fizProjection.getPaspdo() != null) ? (inputDateFormatter.format(fizProjection.getPaspdo())) : "") + "||||||"
-                        + telMobil + telHome + "|||||||||||||||||||||||||||||||||||");
-                writer.newLine(); // Добавить новую строку
             }
 
 
@@ -307,6 +329,9 @@ public class ReportService {
                             .map(GrafikDTO::getDats)
                             .count());
 
+                    if (countedGrafik == 0) {
+                        countedGrafik = 1;
+                    }
 
                     if (kreditDTO.getDatsZakr() == null || kreditDTO.getDatsZakr().isAfter(refDate)) {
                         actualContractEndDate = null;
@@ -320,10 +345,6 @@ public class ReportService {
                         status = "CA";
                     } else {
                         status = "CL";
-                    }
-
-                    if (status.equals("AC") && countedGrafik == 0) {
-                        countedGrafik = 1;
                     }
 
                     BigDecimal grafikPogKred = kreditDTO.getGrafiks().stream()
@@ -427,25 +448,28 @@ public class ReportService {
                             .map(SaldoDTO::getSums) // извлечение значения sums
                             .orElse(BigDecimal.ZERO); // если нет подходящих записей, возвращаем 0
 
+                    BigDecimal pogProcForMaxDate = kreditDTO.getGrafiks().stream()
+                            .filter(g -> !g.getDats().isAfter(refDate)) // фильтрация записей до и включая reference_date
+                            .max(Comparator.comparing(GrafikDTO::getDats)) // поиск максимальной даты
+                            .map(GrafikDTO::getPogProc) // извлечение значения pog_kred
+                            .orElse(BigDecimal.ZERO); // если нет подходящих записей, возвращаем 0
+
 
                     if (status.equals("CA") || status.equals("CL")) {
                         interestOverduePaymentsNumber = 0;
 
                     } else if (sumsForMaxDate.intValue() == 0) {
                         interestOverduePaymentsNumber = 0;
-                    } else if (dokDatsLsLscor - dokDatsLsLscorStartsWith > 0) {
-                        interestOverduePaymentsNumber = dokDatsLsLscor - dokDatsLsLscorStartsWith;
-                    } else if (dokDatsLsLscor - dokDatsLsLscorStartsWith <= 0 && sumsForMaxDate.intValue() > 0) {
-                        interestOverduePaymentsNumber = 1;
                     } else {
-                        interestOverduePaymentsNumber = 0;
+                        interestOverduePaymentsNumber = Math.ceil(sumsForMaxDate.doubleValue() / pogProcForMaxDate.doubleValue());
                     }
 
 
                     if (pogKredForMaxDate.intValue() == 0) {
                         principalOverduePaymentNumber = 0;
-                    } else
+                    } else {
                         principalOverduePaymentNumber = principalOverduePaymentAmount / pogKredForMaxDate.doubleValue();
+                    }
 
 
                     if (principalOverduePaymentNumber > interestOverduePaymentsNumber) {
@@ -456,6 +480,12 @@ public class ReportService {
                         overduePaymentsNumber = principalOverduePaymentNumber;
                     } else if (principalOverduePaymentNumber == 0 && interestOverduePaymentsNumber == 0) {
                         overduePaymentsNumber = 0;
+                    }
+
+                    if (status.equals("CA") || status.equals("CL")) {
+                        principalOverduePaymentNumber = 0;
+                        principalOverduePaymentAmount = 0;
+                        interestOverduePaymentsNumber = 0;
                     }
 
                     SaldoDTO latestSaldoLsKred = kreditDTO.getSaldo().stream()
@@ -510,6 +540,10 @@ public class ReportService {
                             .filter(dats -> dats.isAfter(refDate) || dats.isEqual(refDate))
                             .count());
 
+                    if (outstandingPaymentNumber == 0 && status.equals("AC")) {
+                        outstandingPaymentNumber = 1;
+                    }
+
 
                     if (status.equals("CA") || status.equals("CL")) outstandingPaymentNumber = 0;
                     int totalSum = (sumlspeni != null ? sumlspeni.intValue() : 0)
@@ -556,11 +590,14 @@ public class ReportService {
 
                     String zalogLs = kreditDTO.getZalogs().stream()
                             .map(ZalogDTO::getLs)
-                            .collect(Collectors.joining());
+                            .findFirst()
+                            .orElse(null); // Если список пуст, то вернуть null
 
                     String zalogKodCb = kreditDTO.getZalogs().stream()
+                            .filter(zalog -> zalogLs.equals(zalog.getLs()))
                             .map(ZalogDTO::getKodCb)
-                            .collect(Collectors.joining());
+                            .findFirst()
+                            .orElse(null); // Если список пуст, то вернуть null
 
                     BigDecimal zalogSums = kreditDTO.getZalogs().stream()
                             .map(ZalogDTO::getSums)
@@ -577,6 +614,17 @@ public class ReportService {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
 
+                    if (overduePeriod > 8) {
+                        overduePeriod = 8;
+                    }
+
+
+                    String guarantor = "";
+                    if (zalogLs == null || zalogLs.isEmpty()) {
+                        guarantor = "";
+                    } else {
+                        guarantor = kreditDTO.getKod();
+                    }
 
                     String uniqueKey;
                     if ("AC".equals(status)) {
@@ -594,73 +642,90 @@ public class ReportService {
                     } else {
                         contractStatusDomain = "";
                     }
-                    if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null) && (countedGrafik >= 1)) {
-                        if (isUnique) {
-                            dataBuilder.append("CI|MKOR0001||")
-                                    .append(inputDateFormatter.format(refDate))
-                                    .append("|")
-                                    .append(kreditDTO.getKod())
-                                    .append("|B|")
-                                    .append(kreditDTO.getNumdog().replaceAll("\\s", ""))
-                                    .append("|")
-                                    .append(vidKred)
-                                    .append("|")
-                                    .append(status)
-                                    .append("|")
-                                    .append(contractStatusDomain)
-                                    .append("|UZS|UZS|")
-                                    .append(inputDateFormatter.format(kreditDTO.getDatadog()))
-                                    .append("|")
-                                    .append(inputDateFormatter.format(kreditDTO.getDatadog()))
-                                    .append("|")
-                                    .append(inputDateFormatter.format(latestDate))
-                                    .append("|")
-                                    .append(actualContractEndDate != null ? inputDateFormatter.format(actualContractEndDate) : "")
-                                    .append("|")
-                                    .append(latestDocumentDateBeforeRef != null ? inputDateFormatter.format(latestDocumentDateBeforeRef) : "")
-                                    .append("||")
-                                    .append(kreditDTO.getSumma().intValue())
-                                    .append("|")
-                                    .append(countedGrafik)
-                                    .append("|M|MXD|")
-                                    .append(pod)
-                                    .append("|")
-                                    .append(inputDateFormatter.format(firstPaymentDate))
-                                    .append("|")
-                                    .append((nextPaymentDate != null) ? inputDateFormatter.format(nextPaymentDate) : "")
-                                    .append("||")
-                                    .append(outstandingPaymentNumber)
-                                    .append("|")
-                                    .append(outstandingBalance)
-                                    .append("|")
-                                    .append((int) Math.ceil(overduePaymentsNumber))
-                                    .append("|")
-                                    .append((int) Math.ceil(principalOverduePaymentNumber))
-                                    .append("|")
-                                    .append((int) interestOverduePaymentsNumber)
-                                    .append("|")
-                                    .append((int) principalOverduePaymentAmount + sumsForMaxDate.intValue())
-                                    .append("|")
-                                    .append((int) principalOverduePaymentAmount)
-                                    .append("|")
-                                    .append(sumsForMaxDate.intValue())
-                                    .append("|")
-                                    .append(overduePeriod)
-                                    .append("||||||||||")
-                                    .append(kreditDTO.getProsent().intValue())
-                                    .append("||||")
-                                    .append(zalogLs)
-                                    .append("|")
-                                    .append(kreditDTO.getKod())
-                                    .append("||")
-                                    .append(zalogSums != null ? zalogSums.intValue() : "")
-                                    .append("|UZS|||")
-                                    .append(zalogKodCb)
-                                    .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
-                                    .append("\n");
 
-                            processedEntries.add(uniqueKey);
-                            n++; // Предполагается, что n - счетчик успешно обработанных записей
+
+                    List<AzolikFiz> fizProjections = azolikFizRepository.findByKodchlen(kreditDTO.getKod());
+
+                    for (AzolikFiz fizProjection : fizProjections) {
+
+                        String inn = "";
+                        String pinfl = "";
+
+                        if (!(inn == null || inn.trim().isEmpty()) || !(pinfl == null || pinfl.trim().isEmpty())) {
+
+                            if (!(status.equals("AC") && outstandingBalance == 0 && principalOverduePaymentAmount == 0)) {
+                                if (!kreditDTO.getLsKred().isEmpty() || !kreditDTO.getLsProc().isEmpty()) {
+                                    if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null) && (countedGrafik >= 1)) {
+                                        if (isUnique) {
+                                            dataBuilder.append("CI|MKOR0001||")
+                                                    .append(inputDateFormatter.format(refDate))
+                                                    .append("|")
+                                                    .append(kreditDTO.getKod())
+                                                    .append("|B|")
+                                                    .append(kreditDTO.getNumdog().replaceAll("\\s", ""))
+                                                    .append("|")
+                                                    .append(vidKred)
+                                                    .append("|")
+                                                    .append(status)
+                                                    .append("|")
+                                                    .append(contractStatusDomain)
+                                                    .append("|UZS|UZS|")
+                                                    .append(inputDateFormatter.format(kreditDTO.getDatadog()))
+                                                    .append("|")
+                                                    .append(inputDateFormatter.format(kreditDTO.getDatadog()))
+                                                    .append("|")
+                                                    .append(inputDateFormatter.format(latestDate))
+                                                    .append("|")
+                                                    .append(actualContractEndDate != null ? inputDateFormatter.format(actualContractEndDate) : "")
+                                                    .append("|")
+                                                    .append(latestDocumentDateBeforeRef != null ? inputDateFormatter.format(latestDocumentDateBeforeRef) : "")
+                                                    .append("||")
+                                                    .append(kreditDTO.getSumma().intValue())
+                                                    .append("|")
+                                                    .append(countedGrafik)
+                                                    .append("|M|MXD|")
+                                                    .append(pod)
+                                                    .append("|")
+                                                    .append(inputDateFormatter.format(firstPaymentDate))
+                                                    .append("|")
+                                                    .append((nextPaymentDate != null) ? inputDateFormatter.format(nextPaymentDate) : "")
+                                                    .append("||")
+                                                    .append(outstandingPaymentNumber)
+                                                    .append("|")
+                                                    .append(outstandingBalance)
+                                                    .append("|")
+                                                    .append((int) Math.ceil(overduePaymentsNumber))
+                                                    .append("|")
+                                                    .append((int) Math.ceil(principalOverduePaymentNumber))
+                                                    .append("|")
+                                                    .append((int) interestOverduePaymentsNumber)
+                                                    .append("|")
+                                                    .append((int) principalOverduePaymentAmount + sumsForMaxDate.intValue())
+                                                    .append("|")
+                                                    .append((int) principalOverduePaymentAmount)
+                                                    .append("|")
+                                                    .append(sumsForMaxDate.intValue())
+                                                    .append("|")
+                                                    .append(overduePeriod)
+                                                    .append("||||||||||")
+                                                    .append(kreditDTO.getProsent().intValue())
+                                                    .append("||||")
+                                                    .append(zalogLs != null ? zalogLs : "")
+                                                    .append("|")
+                                                    .append(guarantor)
+                                                    .append("||")
+                                                    .append(zalogSums != null ? zalogSums.intValue() : "")
+                                                    .append("|UZS|||")
+                                                    .append(zalogKodCb != null ? zalogKodCb : "")
+                                                    .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
+                                                    .append("\n");
+
+                                            processedEntries.add(uniqueKey);
+                                            n++; // Предполагается, что n - счетчик успешно обработанных записей
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -668,7 +733,7 @@ public class ReportService {
             String finalData = dataBuilder.toString();
             writer.write(finalData);
             System.out.println(finalData);
-            writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + (fizProjections.size() + n));
+            writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + ((uniqueKods.size() - innAndPinfl.size()) + n));
 
             writer.close();
 
