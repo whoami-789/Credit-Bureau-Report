@@ -126,11 +126,13 @@ public class ReportDataDogService {
 
                         int innAndPinflCount = 0;
 
-                        if ((inn == null || inn.trim().isEmpty()) || (pinfl == null || pinfl.trim().isEmpty())) {
+                        if ((fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) ||
+                                (fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty())) {
                             innAndPinfl.add(String.valueOf(innAndPinflCount + 1));
                         }
 
-                        if (!(inn == null || inn.trim().isEmpty()) || !(pinfl == null || pinfl.trim().isEmpty())) {
+                        if (!(fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) ||
+                                !(fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty())) {
                             writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
                                     + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
                                     + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
@@ -250,20 +252,12 @@ public class ReportDataDogService {
                     zalogDTO.setSums(zalog.getSums());
                     zalogDTO.setKodCb(zalog.getKodCb());
                     zalogDTO.setLs(zalog.getLs());
+                    zalogDTO.setNumDog(zalog.getNumdog());
                     // Дополнительное заполнение других полей ZalogDTO
                     return zalogDTO;
                 }).collect(Collectors.toList());
                 kreditDTO.setZalogs(zalogDTOs);
 
-                // Добавление данных из ZalogXranenie
-                List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream().map(zalogXranenie -> {
-                    ZalogXranenieDTO zalogXranenieDTO = new ZalogXranenieDTO();
-                    zalogXranenieDTO.setData_priem(zalogXranenie.getData_priem());
-                    zalogXranenieDTO.setData_vozvrat(zalogXranenie.getData_vozvrat());
-                    // Дополнительное заполнение других полей ZalogXranenieDTO
-                    return zalogXranenieDTO;
-                }).collect(Collectors.toList());
-                kreditDTO.setZalogXranenieList(zalogXranenieDTOs);
                 return kreditDTO;
 
             }).filter(Objects::nonNull).collect(Collectors.toList());
@@ -283,7 +277,6 @@ public class ReportDataDogService {
             double overduePaymentsNumber = 0;
             int n = 0;
             String contractStatusDomain = "";
-            Map<String, Set<BigDecimal>> principalOverduePaymentAmountsMap = new HashMap<>();
 
 
             for (KreditDTO kreditDTO : kreditDTOList) {
@@ -592,19 +585,18 @@ public class ReportDataDogService {
                     }
 
                     String zalogLs = kreditDTO.getZalogs().stream()
-                            .map(ZalogDTO::getLs)
-                            .findFirst()
-                            .orElse(null); // Если список пуст, то вернуть null
+                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
+                            .map(ZalogDTO::getLs).toList().toString();
 
                     String zalogKodCb = kreditDTO.getZalogs().stream()
-                            .filter(zalog -> zalogLs.equals(zalog.getLs()))
-                            .map(ZalogDTO::getKodCb)
-                            .findFirst()
-                            .orElse(null); // Если список пуст, то вернуть null
+                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
+                            .map(ZalogDTO::getKodCb).toList().toString();
 
-                    BigDecimal zalogSums = kreditDTO.getZalogs().stream()
-                            .map(ZalogDTO::getSums)
-                            .findAny().orElse(null);
+                    String zalogSums = kreditDTO.getZalogs().stream()
+                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
+                            .map(ZalogDTO::getSums).toList().toString();
+
+                    System.out.println(zalogLs + "\n" + zalogKodCb + "\n" + zalogSums);
 
                     int overduePeriod = 0;
 
@@ -663,8 +655,8 @@ public class ReportDataDogService {
 
                     for (AzolikFiz fizProjection : fizProjections) {
 
-                        String inn = "";
-                        String pinfl = "";
+                        String inn = fizProjection.getInn();
+                        String pinfl = fizProjection.getKodPension();
 
                         if (!(inn == null || inn.trim().isEmpty()) || !(pinfl == null || pinfl.trim().isEmpty())) {
 
@@ -729,7 +721,7 @@ public class ReportDataDogService {
                                                     .append("|")
                                                     .append(guarantor)
                                                     .append("||")
-                                                    .append(zalogSums != null ? zalogSums.intValue() : "")
+                                                    .append(zalogSums != null ? zalogSums : "")
                                                     .append("|UZS|||")
                                                     .append(zalogKodCb != null ? zalogKodCb : "")
                                                     .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")

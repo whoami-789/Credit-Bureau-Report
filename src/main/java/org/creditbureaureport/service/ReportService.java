@@ -126,11 +126,13 @@ public class ReportService {
 
                         int innAndPinflCount = 0;
 
-                        if ((inn == null || inn.trim().isEmpty()) || (pinfl == null || pinfl.trim().isEmpty())) {
+                        if ((fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) ||
+                                (fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty())) {
                             innAndPinfl.add(String.valueOf(innAndPinflCount + 1));
                         }
 
-                        if (!(inn == null || inn.trim().isEmpty()) || !(pinfl == null || pinfl.trim().isEmpty())) {
+                        if (!(fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) ||
+                                !(fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty())) {
                             writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
                                     + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
                                     + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
@@ -589,19 +591,16 @@ public class ReportService {
                     }
 
                     String zalogLs = kreditDTO.getZalogs().stream()
-                            .map(ZalogDTO::getLs)
-                            .findFirst()
-                            .orElse(null); // Если список пуст, то вернуть null
+                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
+                            .map(ZalogDTO::getLs).toList().toString();
 
                     String zalogKodCb = kreditDTO.getZalogs().stream()
-                            .filter(zalog -> zalogLs.equals(zalog.getLs()))
-                            .map(ZalogDTO::getKodCb)
-                            .findFirst()
-                            .orElse(null); // Если список пуст, то вернуть null
+                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
+                            .map(ZalogDTO::getKodCb).toList().toString();
 
-                    BigDecimal zalogSums = kreditDTO.getZalogs().stream()
-                            .map(ZalogDTO::getSums)
-                            .findAny().orElse(null);
+                    String zalogSums = kreditDTO.getZalogs().stream()
+                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
+                            .map(ZalogDTO::getSums).toList().toString();
 
                     int overduePeriod = 0;
 
@@ -648,8 +647,8 @@ public class ReportService {
 
                     for (AzolikFiz fizProjection : fizProjections) {
 
-                        String inn = "";
-                        String pinfl = "";
+                        String inn = fizProjection.getInn();
+                        String pinfl = fizProjection.getKodPension();
 
                         if (!(inn == null || inn.trim().isEmpty()) || !(pinfl == null || pinfl.trim().isEmpty())) {
 
@@ -714,7 +713,7 @@ public class ReportService {
                                                     .append("|")
                                                     .append(guarantor)
                                                     .append("||")
-                                                    .append(zalogSums != null ? zalogSums.intValue() : "")
+                                                    .append(zalogSums != null ? zalogSums : "")
                                                     .append("|UZS|||")
                                                     .append(zalogKodCb != null ? zalogKodCb : "")
                                                     .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")

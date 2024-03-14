@@ -15,5 +15,6 @@ public class ZalogDTO {
     private BigDecimal sums;
     private String ls;
     private String kodCb;
+    private String numDog;
     // Другие поля по необходимости
 }

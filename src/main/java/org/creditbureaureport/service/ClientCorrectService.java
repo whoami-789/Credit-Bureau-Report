@@ -98,11 +98,13 @@ public class ClientCorrectService {
 
                 int innAndPinflCount = 0;
 
-                if ((inn == null || inn.trim().isEmpty()) || (pinfl == null || pinfl.trim().isEmpty())) {
+                if ((fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) ||
+                        (fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty())) {
                     innAndPinfl.add(String.valueOf(innAndPinflCount + 1));
                 }
 
-                if (!(inn == null || inn.trim().isEmpty()) || !(pinfl == null || pinfl.trim().isEmpty())) {
+                if (!(fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) ||
+                        !(fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty())) {
                     writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
                             + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
                             + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
