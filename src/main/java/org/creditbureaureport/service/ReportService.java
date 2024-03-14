@@ -595,37 +595,14 @@ public class ReportService {
 
                     String zalogLs = "";
                     String zalogKodCb = "";
-                    int zalogSums = 0;
-                    Zalog previousZalog = null;
+                    double zalogSums = 0;
+                    List<String> zalogsLs = zalogRepository.findLs(kreditDTO.getNumdog());
+                    List<String> zalogsSums = zalogRepository.findSums(kreditDTO.getNumdog());
+                    List<String> zalogsKodCb = zalogRepository.findKodCb(kreditDTO.getNumdog());
 
-                    // Проверяем, был ли уже выполнен запрос для данного numdog
-                    if (previousZalog == null || !previousZalog.getNumdog().equals(kreditDTO.getNumdog())) {
-                        // Если previousZalog еще не был установлен или numdog изменился, то выполняем запрос к базе данных
-                        List<Zalog> zalogs = zalogRepository.findFirstByNumdog(kreditDTO.getNumdog());
-
-                        // Если есть результаты, сохраняем первый в качестве предыдущего
-                        if (!zalogs.isEmpty()) {
-                            previousZalog = zalogs.get(0);
-                        }
-                    }
-
-                    // Если были найдены данные в базе данных, то используем их
-                    if (previousZalog != null) {
-                        zalogLs = previousZalog.getLs();
-                        zalogKodCb = previousZalog.getKodCb();
-                        zalogSums = previousZalog.getSums().intValue();
-                    } else {
-                        // Иначе отправляем запрос к базе данных
-                        List<Zalog> zalogs = zalogRepository.findFirstByNumdog(kreditDTO.getNumdog());
-
-                        // Если есть результаты, сохраняем первый в качестве предыдущего и используем его данные
-                        if (!zalogs.isEmpty()) {
-                            previousZalog = zalogs.get(0);
-                            zalogLs = previousZalog.getLs();
-                            zalogKodCb = previousZalog.getKodCb();
-                            zalogSums = previousZalog.getSums().intValue();
-                        }
-                    }
+                    zalogLs = zalogsLs.get(0);
+                    zalogSums = Double.parseDouble(zalogsSums.get(0));
+                    zalogKodCb = zalogsKodCb.get(0);
 
                     int overduePeriod = 0;
 
@@ -738,7 +715,7 @@ public class ReportService {
                                                     .append("|")
                                                     .append(guarantor)
                                                     .append("||")
-                                                    .append(zalogSums != 0 ? zalogSums : "")
+                                                    .append(zalogSums != 0 ? (int) zalogSums : "")
                                                     .append("|UZS|||")
                                                     .append(zalogKodCb != null ? zalogKodCb : "")
                                                     .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")

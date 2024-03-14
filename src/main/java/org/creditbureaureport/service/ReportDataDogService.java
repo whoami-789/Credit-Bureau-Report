@@ -587,30 +587,17 @@ public class ReportDataDogService {
                         nextPaymentDate = null;
                     }
 
-//                    String zalogLs = kreditDTO.getZalogs().stream()
-//                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
-//                            .map(ZalogDTO::getLs).toList().toString();
-//
-//                    String zalogKodCb = kreditDTO.getZalogs().stream()
-//                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
-//                            .map(ZalogDTO::getKodCb).toList().toString();
-//
-//                    String zalogSums = kreditDTO.getZalogs().stream()
-//                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
-//                            .map(ZalogDTO::getSums).toList().toString();
 
-
-                    Zalog previousZalog = null;
                     String zalogLs = "";
                     String zalogKodCb = "";
-                    int zalogSums = 0;
-                    List<Zalog> zalogs = zalogRepository.findFirstByNumdog(kreditDTO.getNumdog());
+                    double zalogSums = 0;
+                    List<String> zalogsLs = zalogRepository.findLs(kreditDTO.getNumdog());
+                    List<String> zalogsSums = zalogRepository.findSums(kreditDTO.getNumdog());
+                    List<String> zalogsKodCb = zalogRepository.findKodCb(kreditDTO.getNumdog());
 
-                    for (Zalog zalog : zalogs) {
-                        zalogLs = zalog.getLs();
-                        zalogKodCb = zalog.getKodCb();
-                        zalogSums = zalog.getSums().intValue();
-                    }
+                    zalogLs = zalogsLs.get(0);
+                    zalogSums = Double.parseDouble(zalogsSums.get(0));
+                    zalogKodCb = zalogsKodCb.get(0);
 
 
                     int overduePeriod = 0;
@@ -735,7 +722,7 @@ public class ReportDataDogService {
                                                     .append("|")
                                                     .append(guarantor)
                                                     .append("||")
-                                                    .append(zalogSums != 0 ? zalogSums : "")
+                                                    .append(zalogSums != 0 ? (int) zalogSums : "")
                                                     .append("|UZS|||")
                                                     .append(zalogKodCb != null ? zalogKodCb : "")
                                                     .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
