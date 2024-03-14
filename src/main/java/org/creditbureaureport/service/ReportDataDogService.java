@@ -3,6 +3,7 @@ package org.creditbureaureport.service;
 import org.creditbureaureport.dto.*;
 import org.creditbureaureport.model.AzolikFiz;
 import org.creditbureaureport.model.Kredit;
+import org.creditbureaureport.model.Zalog;
 import org.creditbureaureport.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,14 +30,16 @@ public class ReportDataDogService {
     private final DokRepository dokRepository;
     private final KreditRepository kreditRepository;
     private final SaldoRepository saldoRepository;
+    private final ZalogRepository zalogRepository;
 
     @Autowired
-    public ReportDataDogService(AzolikFizRepository azolikFizRepository, AzolikYurRepository yurReportRepository, DokRepository dokRepository, KreditRepository kreditRepository, SaldoRepository saldoRepository) {
+    public ReportDataDogService(AzolikFizRepository azolikFizRepository, AzolikYurRepository yurReportRepository, DokRepository dokRepository, KreditRepository kreditRepository, SaldoRepository saldoRepository, ZalogRepository zalogRepository) {
         this.azolikFizRepository = azolikFizRepository;
         this.yurReportRepository = yurReportRepository;
         this.dokRepository = dokRepository;
         this.kreditRepository = kreditRepository;
         this.saldoRepository = saldoRepository;
+        this.zalogRepository = zalogRepository;
     }
 
 
@@ -247,16 +250,16 @@ public class ReportDataDogService {
                 }).collect(Collectors.toList());
                 kreditDTO.setGrafiks(grafikDTOs);
 
-                List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream().map(zalog -> {
-                    ZalogDTO zalogDTO = new ZalogDTO();
-                    zalogDTO.setSums(zalog.getSums());
-                    zalogDTO.setKodCb(zalog.getKodCb());
-                    zalogDTO.setLs(zalog.getLs());
-                    zalogDTO.setNumDog(zalog.getNumdog());
-                    // Дополнительное заполнение других полей ZalogDTO
-                    return zalogDTO;
-                }).collect(Collectors.toList());
-                kreditDTO.setZalogs(zalogDTOs);
+//                List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream().map(zalog -> {
+//                    ZalogDTO zalogDTO = new ZalogDTO();
+//                    zalogDTO.setSums(zalog.getSums());
+//                    zalogDTO.setKodCb(zalog.getKodCb());
+//                    zalogDTO.setLs(zalog.getLs());
+//                    zalogDTO.setNumDog(zalog.getNumdog());
+//                    // Дополнительное заполнение других полей ZalogDTO
+//                    return zalogDTO;
+//                }).collect(Collectors.toList());
+//                kreditDTO.setZalogs(zalogDTOs);
 
                 return kreditDTO;
 
@@ -584,19 +587,30 @@ public class ReportDataDogService {
                         nextPaymentDate = null;
                     }
 
-                    String zalogLs = kreditDTO.getZalogs().stream()
-                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
-                            .map(ZalogDTO::getLs).toList().toString();
+//                    String zalogLs = kreditDTO.getZalogs().stream()
+//                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
+//                            .map(ZalogDTO::getLs).toList().toString();
+//
+//                    String zalogKodCb = kreditDTO.getZalogs().stream()
+//                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
+//                            .map(ZalogDTO::getKodCb).toList().toString();
+//
+//                    String zalogSums = kreditDTO.getZalogs().stream()
+//                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
+//                            .map(ZalogDTO::getSums).toList().toString();
 
-                    String zalogKodCb = kreditDTO.getZalogs().stream()
-                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
-                            .map(ZalogDTO::getKodCb).toList().toString();
 
-                    String zalogSums = kreditDTO.getZalogs().stream()
-                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
-                            .map(ZalogDTO::getSums).toList().toString();
+                    String zalogLs = "";
+                    String zalogKodCb = "";
+                    int zalogSums = 0;
+                    List<Zalog> zalogs = zalogRepository.findFirstByNumdog(kreditDTO.getNumdog());
 
-                    System.out.println(zalogLs + "\n" + zalogKodCb + "\n" + zalogSums);
+                    for (Zalog zalog : zalogs){
+                        zalogLs = zalog.getLs();
+                        zalogKodCb = zalog.getKodCb();
+                        zalogSums = zalog.getSums().intValue();
+                    }
+
 
                     int overduePeriod = 0;
 
@@ -612,7 +626,6 @@ public class ReportDataDogService {
                     if (overduePeriod > 8) {
                         overduePeriod = 8;
                     }
-
 
                     String guarantor = "";
                     if (zalogLs == null || zalogLs.isEmpty()) {
@@ -721,7 +734,7 @@ public class ReportDataDogService {
                                                     .append("|")
                                                     .append(guarantor)
                                                     .append("||")
-                                                    .append(zalogSums != null ? zalogSums : "")
+                                                    .append(zalogSums != 0 ? zalogSums : "")
                                                     .append("|UZS|||")
                                                     .append(zalogKodCb != null ? zalogKodCb : "")
                                                     .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")

@@ -2,9 +2,11 @@ package org.creditbureaureport.service;
 
 import org.creditbureaureport.dto.*;
 import org.creditbureaureport.model.Kredit;
+import org.creditbureaureport.model.Zalog;
 import org.creditbureaureport.repository.DokRepository;
 import org.creditbureaureport.repository.KreditRepository;
 import org.creditbureaureport.repository.SaldoRepository;
+import org.creditbureaureport.repository.ZalogRepository;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -25,11 +27,13 @@ public class NumdogCorrectService {
     private final DokRepository dokRepository;
     private final KreditRepository kreditRepository;
     private final SaldoRepository saldoRepository;
+    private final ZalogRepository zalogRepository;
 
-    public NumdogCorrectService(DokRepository dokRepository, KreditRepository kreditRepository, SaldoRepository saldoRepository) {
+    public NumdogCorrectService(DokRepository dokRepository, KreditRepository kreditRepository, SaldoRepository saldoRepository, ZalogRepository zalogRepository) {
         this.dokRepository = dokRepository;
         this.kreditRepository = kreditRepository;
         this.saldoRepository = saldoRepository;
+        this.zalogRepository = zalogRepository;
     }
 
     public ReportDTO getReportByNumdog(LocalDate startDate, LocalDate endDate, String numdog) {
@@ -500,17 +504,16 @@ public class NumdogCorrectService {
                         nextPaymentDate = null;
                     }
 
-                    String zalogLs = kreditDTO.getZalogs().stream()
-                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
-                            .map(ZalogDTO::getLs).toList().toString();
+                    String zalogLs = "";
+                    String zalogKodCb = "";
+                    int zalogSums = 0;
+                    List<Zalog> zalogs = zalogRepository.findFirstByNumdog(kreditDTO.getNumdog());
 
-                    String zalogKodCb = kreditDTO.getZalogs().stream()
-                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
-                            .map(ZalogDTO::getKodCb).toList().toString();
-
-                    String zalogSums = kreditDTO.getZalogs().stream()
-                            .filter(z -> z.getNumDog().equals(kreditDTO.getNumdog()))
-                            .map(ZalogDTO::getSums).toList().toString();
+                    for (Zalog zalog : zalogs){
+                        zalogLs = zalog.getLs();
+                        zalogKodCb = zalog.getKodCb();
+                        zalogSums = zalog.getSums().intValue();
+                    }
 
                     int overduePeriod = 0;
 
@@ -613,7 +616,7 @@ public class NumdogCorrectService {
                                             .append("|")
                                             .append(guarantor)
                                             .append("||")
-                                            .append(zalogSums != null ? zalogSums : "")
+                                            .append(zalogSums != 0 ? zalogSums : "")
                                             .append("|UZS|||")
                                             .append(zalogKodCb != null ? zalogKodCb : "")
                                             .append("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
