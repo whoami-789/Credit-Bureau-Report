@@ -600,12 +600,13 @@ public class ReportDataDogService {
 //                            .map(ZalogDTO::getSums).toList().toString();
 
 
+                    Zalog previousZalog = null;
                     String zalogLs = "";
                     String zalogKodCb = "";
                     int zalogSums = 0;
                     List<Zalog> zalogs = zalogRepository.findFirstByNumdog(kreditDTO.getNumdog());
 
-                    for (Zalog zalog : zalogs){
+                    for (Zalog zalog : zalogs) {
                         zalogLs = zalog.getLs();
                         zalogKodCb = zalog.getKodCb();
                         zalogSums = zalog.getSums().intValue();

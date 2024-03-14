@@ -596,12 +596,35 @@ public class ReportService {
                     String zalogLs = "";
                     String zalogKodCb = "";
                     int zalogSums = 0;
-                    List<Zalog> zalogs = zalogRepository.findFirstByNumdog(kreditDTO.getNumdog());
+                    Zalog previousZalog = null;
 
-                    for (Zalog zalog : zalogs){
-                        zalogLs = zalog.getLs();
-                        zalogKodCb = zalog.getKodCb();
-                        zalogSums = zalog.getSums().intValue();
+                    // Проверяем, был ли уже выполнен запрос для данного numdog
+                    if (previousZalog == null || !previousZalog.getNumdog().equals(kreditDTO.getNumdog())) {
+                        // Если previousZalog еще не был установлен или numdog изменился, то выполняем запрос к базе данных
+                        List<Zalog> zalogs = zalogRepository.findFirstByNumdog(kreditDTO.getNumdog());
+
+                        // Если есть результаты, сохраняем первый в качестве предыдущего
+                        if (!zalogs.isEmpty()) {
+                            previousZalog = zalogs.get(0);
+                        }
+                    }
+
+                    // Если были найдены данные в базе данных, то используем их
+                    if (previousZalog != null) {
+                        zalogLs = previousZalog.getLs();
+                        zalogKodCb = previousZalog.getKodCb();
+                        zalogSums = previousZalog.getSums().intValue();
+                    } else {
+                        // Иначе отправляем запрос к базе данных
+                        List<Zalog> zalogs = zalogRepository.findFirstByNumdog(kreditDTO.getNumdog());
+
+                        // Если есть результаты, сохраняем первый в качестве предыдущего и используем его данные
+                        if (!zalogs.isEmpty()) {
+                            previousZalog = zalogs.get(0);
+                            zalogLs = previousZalog.getLs();
+                            zalogKodCb = previousZalog.getKodCb();
+                            zalogSums = previousZalog.getSums().intValue();
+                        }
                     }
 
                     int overduePeriod = 0;
