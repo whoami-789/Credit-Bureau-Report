@@ -17,7 +17,7 @@ public interface KreditRepository extends JpaRepository<Kredit, String> {
     List<Kredit> findAllByLskredIn(Set<String> lsprocList);
 
     List<Kredit> findByDatsIzmBetweenAndDatsIzmLessThanEqualOrStatus(LocalDate start, LocalDate end, LocalDate startAgain, byte status);
-    List<Kredit> findByDatsIzmBetween(LocalDate start, LocalDate end);
+    List<Kredit> findByDatsIzmBetweenOrStatus(LocalDate start, LocalDate end, Byte status);
     List<Kredit> findByDatsIzmBetweenAndNumdog(LocalDate start, LocalDate end, String numdog);
     List<Kredit> findByDatadogBetween(LocalDate start, LocalDate end);
     List<Kredit> findKodByDatadogBetween(LocalDate start, LocalDate end);

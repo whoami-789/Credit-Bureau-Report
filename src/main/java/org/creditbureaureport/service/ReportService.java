@@ -151,7 +151,7 @@ public class ReportService {
 
 
             // Находим кредиты за заданный период
-            List<Kredit> kredits = kreditRepository.findByDatsIzmBetween(startDate, endDate);
+            List<Kredit> kredits = kreditRepository.findByDatsIzmBetweenOrStatus(startDate, endDate, (byte) 2);
 
             System.out.println(kredits.size());
             Map<LocalDate, String> refDates = new LinkedHashMap<>();
@@ -288,6 +288,12 @@ public class ReportService {
             double overduePaymentsNumber = 0;
             int n = 0;
             String contractStatusDomain = "";
+            String prevNumdog = "";
+            String prevKod = "";
+            int prevPod = 0;
+            double prevPrincipalOverduePaymentAmount = 0.0;
+            int prevSumsForMaxDate = 0;
+            int prevOverduePeriod = 0;
 
 
             for (KreditDTO kreditDTO : kreditDTOList) {
@@ -600,9 +606,24 @@ public class ReportService {
                     List<String> zalogsSums = zalogRepository.findSums(kreditDTO.getNumdog());
                     List<String> zalogsKodCb = zalogRepository.findKodCb(kreditDTO.getNumdog());
 
-                    zalogLs = zalogsLs.get(0);
-                    zalogSums = Double.parseDouble(zalogsSums.get(0));
-                    zalogKodCb = zalogsKodCb.get(0);
+                    if (!zalogsLs.isEmpty()) {
+                        zalogLs = zalogsLs.get(0);
+                    } else {
+                        System.out.println("Error");
+                    }
+
+                    if (!zalogsSums.isEmpty()) {
+                        zalogSums = Double.parseDouble(zalogsSums.get(0));
+                    } else {
+                        System.out.println("Error");
+                    }
+
+                    if (!zalogsKodCb.isEmpty()) {
+                        zalogKodCb = zalogsKodCb.get(0);
+                    } else {
+                        System.out.println("Error");
+                    }
+
 
                     int overduePeriod = 0;
 
@@ -614,6 +635,34 @@ public class ReportService {
                     } else {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
+
+                    String currentKod = kreditDTO.getKod();
+                    String currentNumdog = kreditDTO.getNumdog().replaceAll("\\s", "");
+                    double currentPrincipalOverduePaymentAmount = principalOverduePaymentAmount;
+                    int currentPod = pod;
+
+// Сохраняем текущее значение overduePeriod для последующего использования
+                    int previousOverduePeriod = overduePeriod;
+
+// Проверяем, совпадают ли текущие значения с предыдущими и отличаются ли от "0"
+                    if (currentNumdog.equals(prevNumdog) && status.equals("AC") && currentKod.equals(prevKod) &&
+                            currentPod == prevPod) {
+                        // Если совпадают, увеличиваем overduePeriod на 1 относительно предыдущего значения
+                        overduePeriod = prevOverduePeriod + 1;
+                    }
+// Если overduePeriod превышает 8, ограничиваем его значением 8
+                    if (overduePeriod > 8) {
+                        overduePeriod = 8;
+                    }
+
+// Сохраняем текущие значения для следующей итерации
+                    prevNumdog = currentNumdog;
+                    prevKod = currentKod;
+                    prevPod = currentPod;
+                    prevPrincipalOverduePaymentAmount = currentPrincipalOverduePaymentAmount;
+                    prevSumsForMaxDate = sumsForMaxDate.intValue();
+                    prevOverduePeriod = overduePeriod;
+
 
                     if (overduePeriod > 8) {
                         overduePeriod = 8;
@@ -643,7 +692,6 @@ public class ReportService {
                     } else {
                         contractStatusDomain = "";
                     }
-
 
                     List<AzolikFiz> fizProjections = azolikFizRepository.findByKodchlen(kreditDTO.getKod());
 

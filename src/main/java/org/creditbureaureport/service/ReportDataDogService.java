@@ -250,17 +250,25 @@ public class ReportDataDogService {
                 }).collect(Collectors.toList());
                 kreditDTO.setGrafiks(grafikDTOs);
 
-//                List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream().map(zalog -> {
-//                    ZalogDTO zalogDTO = new ZalogDTO();
-//                    zalogDTO.setSums(zalog.getSums());
-//                    zalogDTO.setKodCb(zalog.getKodCb());
-//                    zalogDTO.setLs(zalog.getLs());
-//                    zalogDTO.setNumDog(zalog.getNumdog());
-//                    // Дополнительное заполнение других полей ZalogDTO
-//                    return zalogDTO;
-//                }).collect(Collectors.toList());
-//                kreditDTO.setZalogs(zalogDTOs);
+                List<ZalogDTO> zalogDTOs = kredit.getZalogs().stream().map(zalog -> {
+                    ZalogDTO zalogDTO = new ZalogDTO();
+                    zalogDTO.setSums(zalog.getSums());
+                    zalogDTO.setKodCb(zalog.getKodCb());
+                    zalogDTO.setLs(zalog.getLs());
+                    // Дополнительное заполнение других полей ZalogDTO
+                    return zalogDTO;
+                }).collect(Collectors.toList());
+                kreditDTO.setZalogs(zalogDTOs);
 
+                // Добавление данных из ZalogXranenie
+                List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream().map(zalogXranenie -> {
+                    ZalogXranenieDTO zalogXranenieDTO = new ZalogXranenieDTO();
+                    zalogXranenieDTO.setData_priem(zalogXranenie.getData_priem());
+                    zalogXranenieDTO.setData_vozvrat(zalogXranenie.getData_vozvrat());
+                    // Дополнительное заполнение других полей ZalogXranenieDTO
+                    return zalogXranenieDTO;
+                }).collect(Collectors.toList());
+                kreditDTO.setZalogXranenieList(zalogXranenieDTOs);
                 return kreditDTO;
 
             }).filter(Objects::nonNull).collect(Collectors.toList());
@@ -280,10 +288,15 @@ public class ReportDataDogService {
             double overduePaymentsNumber = 0;
             int n = 0;
             String contractStatusDomain = "";
+            String prevNumdog = "";
+            String prevKod = "";
+            int prevPod = 0;
+            double prevPrincipalOverduePaymentAmount = 0.0;
+            int prevSumsForMaxDate = 0;
+            int prevOverduePeriod = 0;
 
 
             for (KreditDTO kreditDTO : kreditDTOList) {
-
 
                 System.out.println("Кредит: " + kreditDTO.getNumdog());
 
@@ -455,6 +468,7 @@ public class ReportDataDogService {
 
                     if (status.equals("CA") || status.equals("CL")) {
                         interestOverduePaymentsNumber = 0;
+
                     } else if (sumsForMaxDate.intValue() == 0) {
                         interestOverduePaymentsNumber = 0;
                     } else {
@@ -469,9 +483,7 @@ public class ReportDataDogService {
                     }
 
 
-                    if (status.equals("CA") || status.equals("CL")) {
-                        overduePaymentsNumber = 0;
-                    } else if (principalOverduePaymentNumber > interestOverduePaymentsNumber) {
+                    if (principalOverduePaymentNumber > interestOverduePaymentsNumber) {
                         overduePaymentsNumber = principalOverduePaymentNumber;
                     } else if (principalOverduePaymentNumber < interestOverduePaymentsNumber) {
                         overduePaymentsNumber = interestOverduePaymentsNumber;
@@ -587,7 +599,6 @@ public class ReportDataDogService {
                         nextPaymentDate = null;
                     }
 
-
                     String zalogLs = "";
                     String zalogKodCb = "";
                     double zalogSums = 0;
@@ -595,9 +606,23 @@ public class ReportDataDogService {
                     List<String> zalogsSums = zalogRepository.findSums(kreditDTO.getNumdog());
                     List<String> zalogsKodCb = zalogRepository.findKodCb(kreditDTO.getNumdog());
 
-                    zalogLs = zalogsLs.get(0);
-                    zalogSums = Double.parseDouble(zalogsSums.get(0));
-                    zalogKodCb = zalogsKodCb.get(0);
+                    if (!zalogsLs.isEmpty()) {
+                        zalogLs = zalogsLs.get(0);
+                    } else {
+                        System.out.println("Error");
+                    }
+
+                    if (!zalogsSums.isEmpty()) {
+                        zalogSums = Double.parseDouble(zalogsSums.get(0));
+                    } else {
+                        System.out.println("Error");
+                    }
+
+                    if (!zalogsKodCb.isEmpty()) {
+                        zalogKodCb = zalogsKodCb.get(0);
+                    } else {
+                        System.out.println("Error");
+                    }
 
 
                     int overduePeriod = 0;
@@ -611,9 +636,38 @@ public class ReportDataDogService {
                         overduePeriod = (int) Math.ceil(overduePaymentsNumber) + 1;
                     }
 
+                    String currentKod = kreditDTO.getKod();
+                    String currentNumdog = kreditDTO.getNumdog().replaceAll("\\s", "");
+                    double currentPrincipalOverduePaymentAmount = principalOverduePaymentAmount;
+                    int currentPod = pod;
+
+// Сохраняем текущее значение overduePeriod для последующего использования
+                    int previousOverduePeriod = overduePeriod;
+
+// Проверяем, совпадают ли текущие значения с предыдущими и отличаются ли от "0"
+                    if (currentNumdog.equals(prevNumdog) && status.equals("AC") && currentKod.equals(prevKod) &&
+                            currentPod == prevPod) {
+                        // Если совпадают, увеличиваем overduePeriod на 1 относительно предыдущего значения
+                        overduePeriod = prevOverduePeriod + 1;
+                    }
+// Если overduePeriod превышает 8, ограничиваем его значением 8
                     if (overduePeriod > 8) {
                         overduePeriod = 8;
                     }
+
+// Сохраняем текущие значения для следующей итерации
+                    prevNumdog = currentNumdog;
+                    prevKod = currentKod;
+                    prevPod = currentPod;
+                    prevPrincipalOverduePaymentAmount = currentPrincipalOverduePaymentAmount;
+                    prevSumsForMaxDate = sumsForMaxDate.intValue();
+                    prevOverduePeriod = overduePeriod;
+
+
+                    if (overduePeriod > 8) {
+                        overduePeriod = 8;
+                    }
+
 
                     String guarantor = "";
                     if (zalogLs == null || zalogLs.isEmpty()) {
@@ -637,19 +691,6 @@ public class ReportDataDogService {
                         contractStatusDomain = "E";
                     } else {
                         contractStatusDomain = "";
-                    }
-
-                    if (countedGrafik - outstandingPaymentNumber < (int) Math.ceil(overduePaymentsNumber)) {
-                        overduePaymentsNumber = countedGrafik - outstandingPaymentNumber;
-                        overduePeriod = (int) overduePaymentsNumber + 1;
-                    }
-
-                    if (countedGrafik - outstandingPaymentNumber < principalOverduePaymentNumber) {
-                        principalOverduePaymentNumber = countedGrafik - outstandingPaymentNumber;
-                    }
-
-                    if (countedGrafik - outstandingPaymentNumber < interestOverduePaymentsNumber) {
-                        interestOverduePaymentsNumber = countedGrafik - outstandingPaymentNumber;
                     }
 
                     List<AzolikFiz> fizProjections = azolikFizRepository.findByKodchlen(kreditDTO.getKod());
@@ -740,7 +781,6 @@ public class ReportDataDogService {
             }
             String finalData = dataBuilder.toString();
             writer.write(finalData);
-            System.out.println(finalData);
             writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + ((uniqueKods.size() - innAndPinfl.size()) + n));
 
             writer.close();
