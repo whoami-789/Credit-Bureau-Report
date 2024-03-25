@@ -15,12 +15,12 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class Saldo {
 
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @Column(name = "id", nullable = false)
-//    private Long id;
-
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
+    private Long id;
+
+//    @Id
     @Column(name = "ls", nullable = false)
     private String ls;
 
