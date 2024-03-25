@@ -776,8 +776,8 @@ public class ReportDataDogService {
 
             writer.close();
 
-            String newFolder = "C:/Users/TPS-admin/Desktop/CRIF-reports/";
-//            String newFolder = "/Users/rustamrahmov/Desktop/reports/";
+            String userHome = System.getProperty("user.home");
+            String newFolder = userHome + "/Desktop/CRIF-reports/";
             File directory = new File(newFolder);
             if (!directory.exists()) {
                 directory.mkdirs(); // Создает папку и все родительские папки, если они не существуют
