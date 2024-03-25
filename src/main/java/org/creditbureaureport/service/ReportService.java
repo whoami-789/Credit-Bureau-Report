@@ -61,14 +61,14 @@ public class ReportService {
 
             // Задаем маску формата даты и времени
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-            File file = new File("MKOR0001_CSDF_" + dateFormat.format(currentDate) + ".txt");
+            File file = new File("L0000012_CSDF_" + dateFormat.format(currentDate) + ".txt");
             FileOutputStream fos = new FileOutputStream(file);
             // Запись BOM для UTF-8 в начало файла
             fos.write(0xEF);
             fos.write(0xBB);
             fos.write(0xBF);
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fos, StandardCharsets.UTF_8));
-            writer.write("HD|MKOR0001|" + outputDateFormat.format(currentDate) + "|1.0|1|Initial test");
+            writer.write("HD|L0000012|" + outputDateFormat.format(currentDate) + "|1.0|1|Initial test");
             writer.newLine();
 
 
@@ -136,7 +136,7 @@ public class ReportService {
 
                         if (!(fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) ||
                                 !(fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty())) {
-                            writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
+                            writer.write("ID|L0000012||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
                                     + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
                                     + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
                                     ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
@@ -697,7 +697,7 @@ public class ReportService {
                                 if (!kreditDTO.getLsKred().isEmpty() || !kreditDTO.getLsProc().isEmpty()) {
                                     if (!kreditDTO.getDatadog().isAfter(refDate) && !(firstPaymentDate == null) && !(latestDate == null) && (countedGrafik >= 1)) {
                                         if (isUnique) {
-                                            dataBuilder.append("CI|MKOR0001||")
+                                            dataBuilder.append("CI|L0000012||")
                                                     .append(inputDateFormatter.format(refDate))
                                                     .append("|")
                                                     .append(kreditDTO.getKod())
@@ -773,7 +773,7 @@ public class ReportService {
             String finalData = dataBuilder.toString();
             writer.write(finalData);
             System.out.println(finalData);
-            writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + ((uniqueKods.size() - innAndPinfl.size()) + n));
+            writer.write("FT|L0000012|" + outputDateFormat.format(currentDate) + "|" + ((uniqueKods.size() - innAndPinfl.size()) + n));
 
             writer.close();
 

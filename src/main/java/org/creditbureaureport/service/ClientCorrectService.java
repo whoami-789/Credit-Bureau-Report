@@ -35,14 +35,14 @@ public class ClientCorrectService {
 
             // Задаем маску формата даты и времени
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-            File file = new File("MKOR0001_CSDF_" + dateFormat.format(currentDate) + ".txt");
+            File file = new File("L0000012_CSDF_" + dateFormat.format(currentDate) + ".txt");
             FileOutputStream fos = new FileOutputStream(file);
             // Запись BOM для UTF-8 в начало файла
             fos.write(0xEF);
             fos.write(0xBB);
             fos.write(0xBF);
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fos, StandardCharsets.UTF_8));
-            writer.write("HD|MKOR0001|" + outputDateFormat.format(currentDate) + "|1.0|1|Initial test");
+            writer.write("HD|L0000012|" + outputDateFormat.format(currentDate) + "|1.0|1|Initial test");
             writer.newLine();
 
 
@@ -105,7 +105,7 @@ public class ClientCorrectService {
 
                 if (!(fizProjection.getInn() == null || fizProjection.getInn().trim().isEmpty()) ||
                         !(fizProjection.getKodPension() == null || fizProjection.getKodPension().trim().isEmpty())) {
-                    writer.write("ID|MKOR0001||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
+                    writer.write("ID|L0000012||" + inputDateFormatter.format(fizProjection.getDatsIzm()) + "|" + (fizProjection.getKodchlen() != null ? fizProjection.getKodchlen() : "|") + "|" + fizProjection.getImya() + "|"
                             + fizProjection.getFam() + "|" + fizProjection.getOtch() + "|||" + genderCode + "|" + ((fizProjection.getDatsRojd() != null) ? inputDateFormatter.format(fizProjection.getDatsRojd()) : "")
                             + "||UZ||MI|" + new_address + "||||" + "|" + "||||||||||||" + pinfl + inn + "|1" + "|" +
                             ((fizProjection.getSerNumPasp() != null) ? (fizProjection.getSerNumPasp().replaceAll("\\s", "")) : "")
@@ -115,7 +115,7 @@ public class ClientCorrectService {
                     writer.newLine(); // Добавить новую строку
                 }
             }
-            writer.write("FT|MKOR0001|" + outputDateFormat.format(currentDate) + "|" + (fizProjections.size() - innAndPinfl.size()));
+            writer.write("FT|L0000012|" + outputDateFormat.format(currentDate) + "|" + (fizProjections.size() - innAndPinfl.size()));
 
             writer.close();
 
