@@ -49,7 +49,7 @@ public class ReportService {
     }
 
     public List<KreditDTO> getKreditsWithDetails(LocalDate startDate, LocalDate endDate) {
-        List<Kredit> kreditList = kreditRepository.findByDatadogBetween(startDate, endDate);
+        List<Kredit> kreditList = kreditRepository.findByDatsIzmBetweenOrStatus(startDate, endDate, (byte) 2);
         Set<String> uniqueKods = new HashSet<>();
         Set<String> innAndPinfl = new HashSet<>();
         DateTimeFormatter inputDateFormatter = DateTimeFormatter.ofPattern("ddMMyyyy");
@@ -260,15 +260,6 @@ public class ReportService {
                 }).collect(Collectors.toList());
                 kreditDTO.setZalogs(zalogDTOs);
 
-                // Добавление данных из ZalogXranenie
-                List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream().map(zalogXranenie -> {
-                    ZalogXranenieDTO zalogXranenieDTO = new ZalogXranenieDTO();
-                    zalogXranenieDTO.setData_priem(zalogXranenie.getData_priem());
-                    zalogXranenieDTO.setData_vozvrat(zalogXranenie.getData_vozvrat());
-                    // Дополнительное заполнение других полей ZalogXranenieDTO
-                    return zalogXranenieDTO;
-                }).collect(Collectors.toList());
-                kreditDTO.setZalogXranenieList(zalogXranenieDTOs);
                 return kreditDTO;
 
             }).filter(Objects::nonNull).collect(Collectors.toList());

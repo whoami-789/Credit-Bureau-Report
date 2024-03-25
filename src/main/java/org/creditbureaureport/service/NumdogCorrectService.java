@@ -171,15 +171,7 @@ public class NumdogCorrectService {
                 }).collect(Collectors.toList());
                 kreditDTO.setZalogs(zalogDTOs);
 
-                // Добавление данных из ZalogXranenie
-                List<ZalogXranenieDTO> zalogXranenieDTOs = kredit.getZalogXranenieList().stream().map(zalogXranenie -> {
-                    ZalogXranenieDTO zalogXranenieDTO = new ZalogXranenieDTO();
-                    zalogXranenieDTO.setData_priem(zalogXranenie.getData_priem());
-                    zalogXranenieDTO.setData_vozvrat(zalogXranenie.getData_vozvrat());
-                    // Дополнительное заполнение других полей ZalogXranenieDTO
-                    return zalogXranenieDTO;
-                }).collect(Collectors.toList());
-                kreditDTO.setZalogXranenieList(zalogXranenieDTOs);
+
                 return kreditDTO;
 
             }).filter(Objects::nonNull).collect(Collectors.toList());

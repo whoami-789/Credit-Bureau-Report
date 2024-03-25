@@ -15,17 +15,14 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class Saldo {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @Column(name = "id", nullable = false)
+//    private Long id;
 
+    @Id
     @Column(name = "ls", nullable = false)
     private String ls;
-
-//    @ManyToOne
-//    @JoinColumn(name = "ls", referencedColumnName = "lscor", insertable=false, updatable=false)
-//    private Dokument dokument;
 
     @Column(name = "dats", nullable = false)
     private LocalDate dats;

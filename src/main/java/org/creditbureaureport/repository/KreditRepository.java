@@ -19,7 +19,7 @@ public interface KreditRepository extends JpaRepository<Kredit, String> {
     List<Kredit> findByDatsIzmBetweenAndDatsIzmLessThanEqualOrStatus(LocalDate start, LocalDate end, LocalDate startAgain, byte status);
     List<Kredit> findByDatsIzmBetweenOrStatus(LocalDate start, LocalDate end, Byte status);
     List<Kredit> findByDatsIzmBetweenAndNumdog(LocalDate start, LocalDate end, String numdog);
-    List<Kredit> findByDatadogBetween(LocalDate start, LocalDate end);
+    List<Kredit> findByDatadogBetweenOrStatus(LocalDate start, LocalDate end,  Byte status);
     List<Kredit> findKodByDatadogBetween(LocalDate start, LocalDate end);
 
     @Query(value = "select * from SpisokProsrochennixKreditov(:numdog, :endate)", nativeQuery = true)
